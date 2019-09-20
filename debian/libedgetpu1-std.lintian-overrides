@@ -1,0 +1,2 @@
+# We provide two conflicting package variants with the same soname inside.
+libedgetpu1-std: package-name-doesnt-match-sonames libedgetpu1

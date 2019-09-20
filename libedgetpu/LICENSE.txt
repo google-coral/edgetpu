@@ -1,0 +1,7 @@
+Copyright 2019 Google LLC. This software is provided as-is, without warranty
+or representation for any use or purpose. Your use of it is subject to your
+agreements with Google covering this software, or if no such agreement
+applies, your use is subject to a limited, non-transferrable, non-exclusive
+license solely to run the software for your testing use, unless and until
+revoked by Google.
+

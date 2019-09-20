@@ -1,0 +1,155 @@
+edgetpu (12-1) mendel-chef; urgency=medium
+
+  * Use new Bazel-based toolchain to cross-compile with GCC
+  * Python 3.5, 3.6, 3.7 support for armhf, aarch64, and x86_64
+  * Add C API support for Edge TPU library
+  * Package Edge TPU runtime in a separate tar file
+
+ -- Coral <coral-support@google.com>  Mon, 16 Sep 2019 13:27:18 -0700
+
+edgetpu (11-1) mendel-chef; urgency=medium
+
+  * Update EdgeTpu runtime to version 12
+  * Update C++ wrappers based on refactored architecture
+  * Add Edge TPU binary compiler
+
+  Function:
+  * Add SoftmaxRegression class for on-device training with back propagation
+  * Re-implement ImprintingEngine using L2-normalization, with improved
+    performance and ability to keep pre-trained classes (requires a different
+    base model architecture)
+  * Add RunInference to ImprintingEngine API
+
+  Bug:
+  * Fix bug of gray image in transfer learning demo
+  * Use at least 1 image for training set
+  * Modify demos to support reading labels without label id
+  * Fix bug for disorder of height and width
+  * Allow user to specify output folder for downloaded images
+
+  Doc:
+  * Add more comments on 'keep_aspect_ratio'
+  * Clean up Edge TPU names
+  * Add build/install instructions to README
+  * Add notice to ImprintingEngine to explain the API diffs
+
+ -- Coral <coral-support@google.com>  Mon, 15 Jul 2019 15:52:14 -0700
+
+edgetpu (10-2) mendel-chef; urgency=medium
+
+  * Bump version for point release
+
+ -- Coral <coral-support@google.com>  Thu, 18 Apr 2019 13:37:19 -0700
+
+edgetpu (9-2) mendel-chef; urgency=medium
+
+  * Add flag '--enable_assertion' to enable assertion in benchmark tests
+  * Properly test installed edgetpu library (-i option)
+  * Use public names
+  * Use USB accelerator instead of internal name
+  * Add uninstall.sh script
+  * Improve edgetpu python versioning style
+
+ -- Coral <coral-support@google.com>  Wed, 03 Apr 2019 14:11:47 -0800
+
+edgetpu (8-2) mendel-chef; urgency=medium
+
+  * Update libraries
+  * Update install.sh to install to /usr/lib instead of /lib
+  * Add exception tests for multiple TPUs
+
+ -- Coral <coral-support@google.com>  Tue, 02 Apr 2019 14:11:47 -0800
+
+edgetpu (7-2) mendel-chef; urgency=medium
+
+  * Update libedgetpu with soname.
+  * Store exception related tests into exception_test.py and disable it on
+    Raspberry Pi.
+  * Include demo files in distribution
+  * Rename EdgeTpuState_kXXX to EDGE_TPU_STATE_XXX
+  * remove test_data dependency from imprinting demo
+  * Update ListEdgeTpuPaths comment
+  * Better recognize devboard by checking existence of mendel_version
+    file.
+  * Proper symlinks for shared libraries.
+  * Update edgetpu runtime with throttling turned off for PCI-e
+  * Bump changelog and version for Chef release #2.
+
+ -- Coral <coral-support@google.com>  Thu, 28 Mar 2019 14:11:47 -0800
+
+edgetpu (6-2) mendel-chef; urgency=medium
+
+  * Add script to analyze Multiple Edge TPU performance on Python side.
+  * Add missing python3-tk package.
+  * Change matplotlib backend instead of configuring tk.
+  * Update libedgetpu.so
+  * Getting rid of colors.sh.
+  * Install throttled libedgetpu.so on Dev Board by default.
+  * Add python 3.6 support.
+  * Test data is not included in the runtime distribution.
+  * Use wheel instead of plain python files for installation.
+  * Updates edgetpu_cpp_wrapper and adds tests for exception handling.
+  * Rename AIY to Coral.
+  * Add multiple Edge TPU demo.
+  * Update multiple_tpus_performance_analysis.py
+  * Simplifies benchmark set.
+  * Separate deb packages for std and max libedgetpu runtime.
+  * Proper deb package generation for py35 and py36 wrappers.
+  * Adds version check function and constants into Python API.
+
+ -- Coral <coral-support@google.com>  Tue, 19 Mar 2019 17:08:25 -0700
+
+edgetpu (5-2) mendel-beaker; urgency=medium
+
+  * Update libedgetpu binaries
+
+ -- Coral <coral-support@google.com>  Fri, 08 Mar 2019 14:11:47 -0800
+
+edgetpu (4-2) mendel-beaker; urgency=medium
+
+  * Use different working directory for unittests.
+  * Update bazel invocation and io_bazel_rules_closure
+  * Skip bad image when loading test dataset.
+  * Fix coco eval test on gLinux
+  * Copying .py files is not needed anymore in qa_test.sh.
+  * Reduce test_utils redundancy.
+  * Disable coco test temporarily
+  * Move benchmark code into /benchmarks dir.
+  * Move all unit tests to /tests folder.
+  * beef up edgetpu/classification/engine_test.py
+  * Update package list for Dev Board running Python API tests.
+  * Slightly lower test tolerances.
+  * Update QA test script to test default frequency.
+  * Add auto-confirm for test automation.
+
+ -- Coral <coral-support@google.com>  Wed, 27 Feb 2019 11:00:25 -0800
+
+edgetpu (3-2) mendel-beaker; urgency=medium
+
+  * Add LICENSE to package.
+
+ -- Coral <coral-support@google.com>  Mon, 04 Feb 2019 11:20:13 -0800
+
+edgetpu (3-1) mendel-beaker; urgency=medium
+
+  * Replace SeeFood with iNat bird model
+
+ -- Coral <coral-support@google.com>  Mon, 28 Jan 2019 14:10:00 -0800
+
+edgetpu (2-1) mendel-beaker; urgency=medium
+
+  * Update libedgetpu binaries
+
+ -- Coral <coral-support@google.com>  Tue, 22 Jan 2019 10:42:07 -0800
+
+edgetpu (1-1) mendel-beaker; urgency=medium
+
+  * Cut for beaker release and normalization of version.
+
+ -- Coral <coral-support@google.com>  Wed, 16 Jan 2019 12:00:00 -0800
+
+edgetpu (0.1) UNRELEASED; urgency=medium
+
+  * Initial release.
+
+ -- Coral <coral-support@google.com>  Mon, 04 Jun 2018 16:14:00 -0800

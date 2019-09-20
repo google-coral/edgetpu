@@ -1,0 +1,23 @@
+All of the following images are obtained from Open Images Dataset v4
+(https://storage.googleapis.com/openimages/web/index.html)
+
+cat_test_0.bmp (1000 * 1500)
+https://storage.googleapis.com/openimages/web/visualizer/index.html?set=train&c=%2Fm%2F01yrx&id=861217441698b254&type=detection
+
+cat_train_0.bmp (1218 * 1129)
+https://storage.googleapis.com/openimages/web/visualizer/index.html?set=train&c=%2Fm%2F01yrx&id=a06c29ac93f72e9e&type=detection
+
+dog_test_0.bmp (1024 * 680)
+https://storage.googleapis.com/openimages/web/visualizer/index.html?set=train&c=%2Fm%2F0bt9lr&id=81b9f6167f421960&type=detection
+
+dog_train_0.bmp (1500 * 1000)
+https://storage.googleapis.com/openimages/web/visualizer/index.html?set=train&c=%2Fm%2F0bt9lr&id=852e7ee93eaded19&type=detection
+
+hotdog_test_0.bmp (1632 * 1224)
+https://storage.googleapis.com/openimages/web/visualizer/index.html?set=train&c=%2Fm%2F01b9xk&id=4d7133d6aabede44&type=detection
+
+hotdog_train_0.bmp (1080 * 1080)
+https://storage.googleapis.com/openimages/web/visualizer/index.html?set=train&c=%2Fm%2F01b9xk&id=9c60d209eb8efd7a&type=detection
+
+hotdog_train_1.bmp (1728 * 1152)
+https://storage.googleapis.com/openimages/web/visualizer/index.html?set=train&c=%2Fm%2F01b9xk&id=ca5a2557b3756d28&type=detection

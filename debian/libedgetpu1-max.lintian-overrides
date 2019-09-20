@@ -1,0 +1,4 @@
+# We provide two conflicting package variants with the same soname inside.
+libedgetpu1-max: package-name-doesnt-match-sonames libedgetpu1
+libedgetpu1-max: missing-debconf-dependency-for-preinst
+libedgetpu1-max: too-long-short-description-in-templates libedgetpu/accepted-eula

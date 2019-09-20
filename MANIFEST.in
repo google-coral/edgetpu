@@ -1,0 +1,7 @@
+recursive-include benchmarks *
+recursive-include docs *
+recursive-include tests *
+recursive-include examples *
+include edgetpu/swig/*.so
+include LICENSE
+include README.md

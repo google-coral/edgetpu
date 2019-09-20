@@ -1,0 +1,14 @@
+examples/* /usr/share/edgetpu/examples/
+test_data/COPYRIGHT /usr/share/edgetpu/examples/images
+test_data/bird.bmp /usr/share/edgetpu/examples/images
+test_data/cat.bmp /usr/share/edgetpu/examples/images
+test_data/grace_hopper.bmp /usr/share/edgetpu/examples/images
+test_data/parrot.jpg /usr/share/edgetpu/examples/images
+test_data/sunflower.bmp /usr/share/edgetpu/examples/images
+test_data/deeplabv3_mnv2_pascal_quant_edgetpu.tflite /usr/share/edgetpu/examples/models
+test_data/mobilenet_ssd_v1_coco_quant_postprocess_edgetpu.tflite /usr/share/edgetpu/examples/models
+test_data/mobilenet_ssd_v2_coco_quant_postprocess_edgetpu.tflite /usr/share/edgetpu/examples/models
+test_data/mobilenet_ssd_v2_face_quant_postprocess_edgetpu.tflite /usr/share/edgetpu/examples/models
+test_data/mobilenet_v2_1.0_224_inat_bird_quant_edgetpu.tflite /usr/share/edgetpu/examples/models
+test_data/coco_labels.txt /usr/share/edgetpu/examples/models
+test_data/inat_bird_labels.txt /usr/share/edgetpu/examples/models

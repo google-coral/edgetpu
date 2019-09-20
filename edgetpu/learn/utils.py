@@ -1,0 +1,1 @@
+from edgetpu.swig.edgetpu_cpp_wrapper import AppendFullyConnectedAndSoftmaxLayerToModel

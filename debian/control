@@ -1,0 +1,86 @@
+Source: edgetpu
+Maintainer: Coral <coral-support@google.com>
+Section: python
+Priority: optional
+Build-Depends: dh-python, python3-setuptools, python3-all, debhelper (>= 9)
+Standards-Version: 3.9.6
+Homepage: https://coral.withgoogle.com/
+
+Package: edgetpu-examples
+Architecture: all
+Depends: python3-edgetpu,
+         ${misc:Depends},
+         ${python3:Depends}
+Description: Example code for Edge TPU Python API
+ Python examples to demonstrate how to use Edge TPU Python API
+
+Package: python3-edgetpu
+Architecture: any
+Depends: libc6,
+         libedgetpu1-std | libedgetpu1,
+         libgcc1,
+         libstdc++6,
+         python3-numpy,
+         python3-pil,
+         ${misc:Depends},
+         ${python3:Depends}
+Description: Edge TPU Python API
+ Python library for interfacing with the Edge TPU on the Coral Edge TPU Dev
+ Board
+
+Package: libedgetpu1-std
+Provides: libedgetpu1
+Conflicts: libedgetpu1
+Section: misc
+Priority: optional
+Architecture: any
+Multi-Arch: same
+Depends: libc6,
+         libgcc1,
+         libstdc++6,
+         libusb-1.0-0,
+         ${misc:Depends}
+Description: Support library for Edge TPU
+ Support library (standard speed) for the Edge TPU
+
+Package: libedgetpu1-max
+Provides: libedgetpu1
+Conflicts: libedgetpu1
+Section: misc
+Priority: optional
+Architecture: any
+Multi-Arch: same
+Depends: libc6,
+         libgcc1,
+         libstdc++6,
+         libusb-1.0-0,
+         ${misc:Depends}
+Description: Support library for Edge TPU
+ Support library (max speed) for the Edge TPU
+
+Package:libedgetpu-dev
+Section: libdevel
+Priority: optional
+Architecture: any
+Depends: libedgetpu1,
+         ${misc:Depends}
+Description: Development files for libedgetpu
+ This package contains C++ Header files for libedgetpu.so
+
+Package:edgetpu-compiler
+Section: misc
+Priority: optional
+Architecture: arm64 amd64
+Depends: ${misc:Depends}
+Description: Edge TPU model compiler
+ This package contains the Edge TPU model compiler
+
+Package:edgetpu
+Section: metapackages
+Priority: optional
+Architecture: all
+Depends: edgetpu-compiler (= ${binary:Version}),
+         libedgetpu1-std (= ${binary:Version}) | libedgetpu1-max (= ${binary:Version}),
+         ${misc:Depends}
+Description: Edge TPU compiler and runtime
+ Installs core components for Edge TPU support.

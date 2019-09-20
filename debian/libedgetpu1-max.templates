@@ -1,0 +1,21 @@
+Template: libedgetpu/accepted-eula
+Type: boolean
+Default: false
+Description: Continue to install the Edge TPU runtime that runs at the maximum operating frequency?
+ You're about to install the Edge TPU runtime that runs at the maximum operating frequency.
+ .
+ Warning: During normal operation, the USB Accelerator may heat up, depending
+ on the computation workloads and operating frequency. Touching the metal part of the
+ device after it has been operating for an extended period of time may lead to discomfort
+ and/or skin burns. As such, when using the Edge TPU runtime at the maximum operating
+ frequency, the USB Accelerator should be operated at an ambient temperature of 25C or less.
+ (If you instead use the Edge TPU runtime at the default operating frequency, then the device
+ is safe to operate at an ambient temperature of 35C or less.)
+ .
+ Google does not accept any responsibility for any loss or damage if the device is operated
+ outside of the recommended ambient temperature range.
+
+Template: libedgetpu/error-eula
+Type: error
+Description: Install aborted.
+ For help setting up your device, see g.co/coral/setup.

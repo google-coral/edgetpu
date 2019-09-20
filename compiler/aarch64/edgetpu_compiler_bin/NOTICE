@@ -1,0 +1,77 @@
+“Product” means the Edge TPU Accelerator, the Edge TPU runtime,
+the Edge TPU model compiler and the Edge TPU Python API library.
+
+Disclaimer for the Product.
+
+YOU UNDERSTAND AND AGREE THAT THE PRODUCT IS PROVIDED “AS IS”
+AND YOUR USE OF THE PRODUCT WILL BE AT YOUR SOLE RISK.
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW,
+GOOGLE DOES NOT MAKE ANY WARRANTY OF ANY KIND, WHETHER EXPRESS,
+IMPLIED, STATUTORY OR OTHERWISE, INCLUDING WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR USE, AND NONINFRINGEMENT.
+GOOGLE DOES NOT WARRANT THAT THE OPERATION OF THE PRODUCT WILL BE
+ERROR-FREE OR UNINTERRUPTED.  THE PRODUCT PROVIDED TO EVALUATOR
+MAY NOT BE DESIGNED, MANUFACTURED, OR INTENDED FOR PRODUCTION USE.
+
+
+Restrictions. You will not, and will not allow others to: 
+
+adapt, alter, modify, translate, disable, tamper with, decompile,
+disassemble, or reverse engineer the Product or any of its components; 
+copy or reproduce the Product; redistribute, transfer, sublicense,
+loan, sell, lease, or use for time-sharing or service bureau purposes
+the Product or any of its components; remove, obscure, or alter any
+proprietary notices on or in the Product; use any of Google's trade
+names, trademarks, service marks, logos, domain names, or other
+distinctive brand features; expose any APIs of the Product or any
+of its components; violate Google’s technical protocols or any other
+technical requirements or specifications applicable to the Product
+that are communicated to You by Google in writing; use the Product,
+related software, or documentation to support any patent infringement
+claim against Google. use the Product for operation of nuclear
+facilities, air traffic control or life support systems or any
+other applications or use, where use or failure of the Product
+could lead to death, personal injury, or environmental damage;
+violate, or encourage the violation of, the legal rights of others; and 
+use the Product for any unlawful, invasive, infringing, defamatory,
+or fraudulent purposes.
+
+Feedback. 
+
+“Feedback” means all suggestions, comments, feedback, ideas, or know-how
+(whether in oral or written form) provided by YOU to Google  under the
+terms of this Agreement.
+
+LICENSE TO FEEDBACK
+
+YOU hereby grants to GOOGLE, under all of YOUR Intellectual Property,
+a perpetual, irrevocable, royalty free, non-exclusive, worldwide
+licence to; (i) use, copy and modify the Feedback; (ii) sell, supply,
+or otherwise distribute the Feedback; (iii) import and otherwise
+distribute and dispose of products that incorporate the Feedback;
+and (iv) sublicense the Feedback to third parties without any restrictions.
+
+YOU hereby represent and warrant that YOU have power to cause all patents
+owned or controlled by YOU to be licensed as set forth in this Agreement.
+
+YOU will not knowingly give to GOOGLE any Feedback it has reason to believe
+is subject to any patent, copyright or other Intellectual Property claim
+or right of any third party.
+
+Export Rules.
+
+You will not export, either directly or indirectly, any product, service
+or technical data or system incorporating these items without first
+obtaining any required license or other approval from the U.S. Department
+of Commerce or any other agency or department of the United States Government.
+In the event any product is exported from the United States or re-exported
+from a foreign destination by You, You will ensure that the distribution
+and export/re-export or import of the product is in compliance with all laws,
+regulations, orders, or other restrictions of the U.S. Export Administration
+Regulations and the appropriate foreign government. You agree that neither
+You nor any of Your subsidiaries will export/re-export any technical data,
+process, product, or service, directly or indirectly, to any country for
+which the United States government or any agency thereof or the foreign
+government from where it is shipping requires an export license, or other
+governmental approval, without first obtaining the license or approval.
+

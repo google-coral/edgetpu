@@ -1,0 +1,24 @@
+#!/bin/sh -e
+
+. /usr/share/debconf/confmodule
+
+db_version 2.0
+
+db_get libedgetpu/accepted-eula
+if [ "$RET" = "true" ]; then
+    exit 0 # already accepted
+fi
+
+db_fset libedgetpu/accepted-eula seen false
+db_input critical libedgetpu/accepted-eula
+db_go || true
+
+db_get libedgetpu/accepted-eula
+if [ "$RET" = "true" ]; then
+    exit 0  # accepted
+fi
+
+db_input critical libedgetpu/error-eula
+db_go || true
+
+exit 1  # not accepted

@@ -1,0 +1,3 @@
+#!/bin/bash
+d="$(dirname "${BASH_SOURCE[0]}")"
+${d}/edgetpu_compiler_bin/ld-linux-x86-64.so.2 --library-path ${d}/edgetpu_compiler_bin ${d}/edgetpu_compiler_bin/edgetpu_compiler "$@"

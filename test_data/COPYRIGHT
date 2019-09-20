@@ -1,0 +1,40 @@
+Open Images Dataset V5.
+License: Attribution 2.0 Generic (CC BY 2.0)
+URL: https://creativecommons.org/licenses/by/2.0/
+
+- bird.bmp
+  https://storage.googleapis.com/openimages/web/visualizer/index.html?set=train&type=detection&c=%2Fm%2F015p6&id=05cae1286a212d52
+
+- cat.bmp, cat_720p.jpg, cat_1080p.jpg
+  https://storage.googleapis.com/openimages/web/visualizer/index.html?set=train&type=detection&c=%2Fm%2F01yrx&id=02b4196ce8a0e541
+
+- sunflower.bmp
+  https://storage.googleapis.com/openimages/web/visualizer/index.html?set=train&type=detection&c=%2Fm%2F0ftb8&id=57c28a05d44c2ff9
+
+- dragonfly.bmp
+  https://storage.googleapis.com/openimages/web/visualizer/index.html?set=train&type=detection&c=%2Fm%2F0ft9s&id=d9ed55a129da5505
+
+- face.jpg (1028 * 712)
+  https://storage.googleapis.com/openimages/web/visualizer/index.html?set=train&c=%2Fm%2F0dzct&id=959ec6a16e85dc22&type=detection
+
+- pets.jpg (2360 * 1983)
+  https://storage.googleapis.com/openimages/web/visualizer/index.html?set=train&c=%2Fm%2F0bt9lr&id=82270c27bacdcaa4&type=detection
+
+- hot_dog.jpg (3264 * 2448)
+  https://storage.googleapis.com/openimages/web/visualizer/index.html?set=train&c=%2Fm%2F01b9xk&id=1170c58625bec5dc&type=detection
+
+- parrot.jpg (1688 * 3064)
+  https://storage.googleapis.com/openimages/web/visualizer/index.html?set=train&c=%2Fm%2F0gv1x&id=0f3ebab958f44f5f&type=detection
+
+- owl.jpg (1600 * 1200)
+  https://storage.googleapis.com/openimages/web/visualizer/index.html?set=train&c=%2Fm%2F09d5_&id=165178f034f150ba&type=detection
+
+- bird_segmentation.bmp bird_segmentation_mask.bmp (1600 * 1066)
+   https://storage.googleapis.com/openimages/web/visualizer/index.html?set=train&type=segmentation&c=%2Fm%2F015p6&id=12142db5804533c8
+
+Naval History and Heritage Command
+License: All information on this site is in the public domain and may be distributed or copied unless otherwise specified. Use of appropriate byline/photo/image credits is requested.
+URL: http://www.history.navy.mil/warning.htm
+
+- grace_hopper.bmp
+  https://www.history.navy.mil/content/history/nhhc/our-collections/photography/numerical-list-of-images/nhhc-series/nh-series/NH-96000/NH-96919-KN/_jcr_content/mediaitem/image.img.jpg/1438289956819.jpg

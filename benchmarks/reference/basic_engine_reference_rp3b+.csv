@@ -1,0 +1,15 @@
+MODEL INFERENCE_TIME
+inception_v1_224_quant.tflite 542.46
+inception_v1_224_quant_edgetpu.tflite 18.94
+inception_v4_299_quant.tflite 4483.43
+inception_v4_299_quant_edgetpu.tflite 1054.94
+mobilenet_ssd_v1_coco_quant_postprocess.tflite 560.25
+mobilenet_ssd_v1_coco_quant_postprocess_edgetpu.tflite 57.68
+mobilenet_ssd_v2_coco_quant_postprocess.tflite 547.03
+mobilenet_ssd_v2_coco_quant_postprocess_edgetpu.tflite 62.14
+mobilenet_ssd_v2_face_quant_postprocess.tflite 595.38
+mobilenet_ssd_v2_face_quant_postprocess_edgetpu.tflite 38.75
+mobilenet_v1_1.0_224_quant.tflite 286.85
+mobilenet_v1_1.0_224_quant_edgetpu.tflite 9.0
+mobilenet_v2_1.0_224_quant.tflite 253.34
+mobilenet_v2_1.0_224_quant_edgetpu.tflite 10.61
