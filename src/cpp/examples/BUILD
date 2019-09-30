@@ -68,3 +68,17 @@ cc_binary(
         "@com_google_absl//absl/flags:parse",
     ],
 )
+
+cc_binary(
+    name = "object_detection",
+    testonly = 1,
+    srcs = ["object_detection.cc"],
+    deps = [
+        ":label_utils",
+        ":model_utils",
+        "//src/cpp:test_utils",
+        "//src/cpp/detection:engine",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+    ],
+)
