@@ -4,7 +4,7 @@
 
 namespace coral {
 const char kEdgeTpuCppWrapperVersion[] =
-    "API(2.0) TF(84c176726febd6f0b1eaae5b165af8b6a983b2f8)";
+    "API(2.1) TF(5d0b55dd4a00c74809e5b32217070a26ac6ef823)";
 const char kSupportedRuntimeVersion[] = "RuntimeVersion(12)";
 std::string GetRuntimeVersion() {
   return ::edgetpu::EdgeTpuManager::GetSingleton()->Version();

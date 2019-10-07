@@ -21,11 +21,7 @@ if [[ -f /etc/mendel_version ]] && [[ "${RUNTIME_PERF}" == "direct" ]]; then
   BENCHMARK_OPTIONS=--enable_assertion
 fi
 
-if [[ ${MACHINE} != "x86_64" ]]; then
-  echo -e "${GREEN}--------------- Enable CPU performance mode -----------------${DEFAULT}"
-  retry "sudo apt-get install -y linux-cpupower"
-  sudo cpupower frequency-set --governor performance
-fi
+disable_cpu_scaling
 
 function run_benchmark {
   if [[ "${TEST_TYPE}" == "installed" ]]; then

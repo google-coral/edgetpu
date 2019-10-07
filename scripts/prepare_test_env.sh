@@ -49,13 +49,19 @@ MACHINE=$(uname -m)
 
 case "${MACHINE}" in
   x86_64)
-    CPU_DIR=k8
+    CPU=k8
+    HOST_GNU_TYPE=x86_64-linux-gnu
+    REQUEST_FOR_MULTI_EDGETPU_TEST=3000
     ;;
   armv7l)
-    CPU_DIR=armv7a
+    CPU=armv7a
+    HOST_GNU_TYPE=arm-linux-gnueabihf
+    REQUEST_FOR_MULTI_EDGETPU_TEST=1000
     ;;
   aarch64)
-    CPU_DIR=aarch64
+    CPU=aarch64
+    HOST_GNU_TYPE=aarch64-linux-gnu
+    REQUEST_FOR_MULTI_EDGETPU_TEST=3000
     ;;
   *)
     error "Your platform is not supported."
@@ -63,7 +69,7 @@ case "${MACHINE}" in
     ;;
 esac
 
-export LD_LIBRARY_PATH="${SCRIPT_DIR}/../libedgetpu/${RUNTIME_PERF}/${CPU_DIR}"
+LD_LIBRARY_PATH="${SCRIPT_DIR}/../libedgetpu/${RUNTIME_PERF}/${CPU}"
 
 function retry {
   local TIMES=3
@@ -72,6 +78,16 @@ function retry {
     ${1} && break
     [[ "${i}" -eq "${TIMES}" ]] && exit 1
   done
+}
+
+function disable_cpu_scaling {
+  if [[ $(apt-cache search linux-cpupower) ]]; then
+    retry "sudo apt-get install -y linux-cpupower"
+  else
+    retry "sudo apt-get install -y linux-tools-$(uname -r)"
+  fi
+  echo -e "${GREEN}--------------- Enable CPU performance mode -----------------${DEFAULT}"
+  sudo cpupower frequency-set --governor performance
 }
 
 retry "sudo apt-get update"
@@ -92,7 +108,7 @@ if [[ "${MACHINE}" == "x86_64" ]]; then
   fi
 fi
 
-if [[ ! -f /etc/mendel_version ]] && [[ "$AUTO_CONFIRM" != "y" ]]; then
+if [[ ! -f /etc/mendel_version ]] && [[ "${AUTO_CONFIRM}" != "y" ]]; then
   echo -e "${GREEN}Plug in USB Accelerator and press 'Enter' to continue.${DEFAULT}"
   read LINE
 fi

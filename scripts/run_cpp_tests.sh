@@ -17,98 +17,92 @@ set -e
 set -x
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/prepare_test_env.sh"
 
-case `uname -m` in
-  x86_64)
-    HOST_GNU_TYPE=x86_64-linux-gnu
-    CPU=k8
-    REQUEST_FOR_MULTI_EDGETPU_TEST=3000
-    ;;
-  armv7l)
-    HOST_GNU_TYPE=arm-linux-gnueabihf
-    CPU=armv7a
-    REQUEST_FOR_MULTI_EDGETPU_TEST=1000
-    ;;
-  aarch64)
-    HOST_GNU_TYPE=aarch64-linux-gnu
-    CPU=aarch64
-    REQUEST_FOR_MULTI_EDGETPU_TEST=3000
-    ;;
-  *)
-    error "Your platform is not supported."
-    exit 1
-    ;;
-esac
+function run_test {
+  if [[ "${TEST_TYPE}" == "installed" ]]; then
+    pushd /tmp
+      $@
+    popd
+  else
+    env LD_LIBRARY_PATH="${LD_LIBRARY_PATH}" $@
+  fi
+}
 
-export LD_LIBRARY_PATH="${SCRIPT_DIR}/../libedgetpu/direct/${CPU}"
 OUT_DIR="${SCRIPT_DIR}/../out/${CPU}"
 TEST_DATA_DIR="${SCRIPT_DIR}/../test_data"
 
 # Run tests.
 TESTS_DIR="${OUT_DIR}/tests/src/cpp"
 
-"${TESTS_DIR}/error_reporter_test"
-"${TESTS_DIR}/version_test"
-"${TESTS_DIR}/bbox_utils_test"
+run_test "${TESTS_DIR}/error_reporter_test"
+run_test "${TESTS_DIR}/version_test"
+run_test "${TESTS_DIR}/bbox_utils_test"
 
-"${TESTS_DIR}/basic/basic_engine_native_test" \
+run_test "${TESTS_DIR}/basic/basic_engine_native_test" \
      --test_data_dir="${TEST_DATA_DIR}"
-"${TESTS_DIR}/basic/basic_engine_test" \
+run_test "${TESTS_DIR}/basic/basic_engine_test" \
      --test_data_dir="${TEST_DATA_DIR}"
-"${TESTS_DIR}/basic/edgetpu_resource_manager_test"
-"${TESTS_DIR}/basic/inference_repeatability_test" \
+run_test "${TESTS_DIR}/basic/edgetpu_resource_manager_test"
+run_test "${TESTS_DIR}/basic/inference_repeatability_test" \
     --stress_test_runs=20 \
     --test_data_dir="${TEST_DATA_DIR}"
-"${TESTS_DIR}/basic/inference_stress_test"  \
+run_test "${TESTS_DIR}/basic/inference_stress_test"  \
     --stress_test_runs=20 \
     --stress_with_sleep_test_runs=5 \
     --test_data_dir="${TEST_DATA_DIR}"
-"${TESTS_DIR}/basic/model_loading_stress_test" \
+run_test "${TESTS_DIR}/basic/model_loading_stress_test" \
     --stress_test_runs=20 \
     --test_data_dir="${TEST_DATA_DIR}"
-"${TESTS_DIR}/basic/models_test" \
+run_test "${TESTS_DIR}/basic/models_test" \
     --test_data_dir="${TEST_DATA_DIR}"
-"${TESTS_DIR}/classification/engine_test" \
+run_test "${TESTS_DIR}/classification/engine_test" \
     --test_data_dir="${TEST_DATA_DIR}"
-"${TESTS_DIR}/classification/models_test" \
-    --test_data_dir="${TEST_DATA_DIR}"
-
-"${TESTS_DIR}/detection/engine_test" \
-    --test_data_dir="${TEST_DATA_DIR}"
-"${TESTS_DIR}/detection/models_test" \
+run_test "${TESTS_DIR}/classification/models_test" \
     --test_data_dir="${TEST_DATA_DIR}"
 
-"${TESTS_DIR}/learn/imprinting/engine_native_test" \
+run_test "${TESTS_DIR}/detection/engine_test" \
     --test_data_dir="${TEST_DATA_DIR}"
-"${TESTS_DIR}/learn/imprinting/engine_test" \
-    --test_data_dir="${TEST_DATA_DIR}"
-"${TESTS_DIR}/learn/utils_test" \
+run_test "${TESTS_DIR}/detection/models_test" \
     --test_data_dir="${TEST_DATA_DIR}"
 
-"${TESTS_DIR}/posenet/models_test" \
+run_test "${TESTS_DIR}/learn/imprinting/engine_native_test" \
+    --test_data_dir="${TEST_DATA_DIR}"
+run_test "${TESTS_DIR}/learn/imprinting/engine_test" \
+    --test_data_dir="${TEST_DATA_DIR}"
+run_test "${TESTS_DIR}/learn/utils_test" \
+    --test_data_dir="${TEST_DATA_DIR}"
+
+run_test "${TESTS_DIR}/posenet/models_test" \
     --test_data_dir="${TEST_DATA_DIR}"
 
 if [[ -f "${TESTS_DIR}/experimental/experimental_models_test" ]]; then
-  "${TESTS_DIR}/experimental/experimental_models_test" \
+  run_test "${TESTS_DIR}/experimental/experimental_models_test" \
       --test_data_dir="${TEST_DATA_DIR}"
 fi
 
-# Run benchmarks.
+disable_cpu_scaling
+
 BENCHMARKS_DIR="${OUT_DIR}/benchmarks/src/cpp"
 
-"${BENCHMARKS_DIR}/basic/models_benchmark" \
-    --benchmark_out="${SCRIPT_DIR}/benchmark_${CPU}.csv" \
+# Run benchmarks.
+run_test "${BENCHMARKS_DIR}/basic/models_benchmark" \
+    --benchmark_out="${SCRIPT_DIR}/benchmark_${CPU}_${RUNTIME_PERF}.csv" \
     --benchmark_out_format=csv \
     --test_data_dir="${TEST_DATA_DIR}"
 
-"${BENCHMARKS_DIR}/basic/edgetpu_resource_manager_benchmark"
+run_test "${BENCHMARKS_DIR}/basic/edgetpu_resource_manager_benchmark" \
+    --benchmark_out="${SCRIPT_DIR}/resource_manager_benchmark_${CPU}_${RUNTIME_PERF}.csv" \
+    --benchmark_out_format=csv \
 
-"${BENCHMARKS_DIR}/posenet/models_benchmark" \
+run_test "${BENCHMARKS_DIR}/posenet/models_benchmark" \
+    --benchmark_out="${SCRIPT_DIR}/posenet_benchmark_${CPU}_${RUNTIME_PERF}.csv" \
+    --benchmark_out_format=csv \
     --test_data_dir="${TEST_DATA_DIR}"
 
 if [[ -f "${BENCHMARKS_DIR}/experimental/experimental_models_benchmark" ]]; then
-  "${BENCHMARKS_DIR}/experimental/experimental_models_benchmark" \
-      --benchmark_out="${SCRIPT_DIR}/exp_benchmark_${CPU}.csv" \
+  run_test "${BENCHMARKS_DIR}/experimental/experimental_models_benchmark" \
+      --benchmark_out="${SCRIPT_DIR}/exp_benchmark_${CPU}_${RUNTIME_PERF}.csv" \
       --benchmark_out_format=csv \
       --test_data_dir="${TEST_DATA_DIR}"
 fi
@@ -118,26 +112,27 @@ echo "To run the following tests, please insert additional Edge TPU if only one 
 echo "Press Enter when ready."
 read LINE
 
-${TESTS_DIR}/basic/multiple_tpus_inference_stress_test \
+echo "Run multiple edgetpu tests..."
+run_test "${TESTS_DIR}/basic/multiple_tpus_inference_stress_test" \
     --test_data_dir="${TEST_DATA_DIR}"
 
 # Tools.
 TOOLS_DIR="${OUT_DIR}/tools"
 
-"${TOOLS_DIR}/multiple_tpus_performance_analysis" \
+run_test "${TOOLS_DIR}/multiple_tpus_performance_analysis" \
     --test_data_dir="${TEST_DATA_DIR}" \
     --num_requests="${REQUEST_FOR_MULTI_EDGETPU_TEST}"
 
 # Examples.
 EXAMPLES_DIR="${OUT_DIR}/examples"
 
-"${EXAMPLES_DIR}/two_models_one_tpu" \
+run_test "${EXAMPLES_DIR}/two_models_one_tpu" \
   "${TEST_DATA_DIR}/mobilenet_v2_1.0_224_inat_bird_quant_edgetpu.tflite" \
   "${TEST_DATA_DIR}/mobilenet_v2_1.0_224_inat_plant_quant_edgetpu.tflite" \
   "${TEST_DATA_DIR}/bird.bmp" \
   "${TEST_DATA_DIR}/sunflower.bmp"
 
-"${EXAMPLES_DIR}/two_models_two_tpus_threaded" \
+run_test "${EXAMPLES_DIR}/two_models_two_tpus_threaded" \
   "${TEST_DATA_DIR}/mobilenet_v2_1.0_224_inat_bird_quant_edgetpu.tflite" \
   "${TEST_DATA_DIR}/mobilenet_v2_1.0_224_inat_plant_quant_edgetpu.tflite" \
   "${TEST_DATA_DIR}/bird.bmp" \
