@@ -30,6 +30,11 @@ std::vector<uint8_t> GetRandomInput(std::vector<int> shape);
 std::vector<uint8_t> GetInputFromImage(const std::string& image_path,
                                        const ImageDims& target_dims);
 
+// Gets input from images as unsigned char arrays and resizes to `target_dims`. 
+// It will crash upon failure.
+std::vector<uint8_t> GetInputFromImageData(const uint8_t *data, const ImageDims &image_dims,
+                                           const ImageDims &target_dims);
+
 // Gets list of all models.
 std::vector<std::string> GetAllModels();
 
