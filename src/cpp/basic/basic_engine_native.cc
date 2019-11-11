@@ -30,6 +30,16 @@ using tflite::ops::builtin::BuiltinOpResolver;
       is_initialized_,                                                        \
       "BasicEngineNative must be initialized! Please ensure the instance is " \
       "created by BasicEngineNativeBuilder!")
+
+TfLiteFloatArray* TfLiteFloatArrayCopy(const TfLiteFloatArray* src) {
+  if (!src) return nullptr;
+  TfLiteFloatArray* ret = static_cast<TfLiteFloatArray*>(
+      malloc(TfLiteFloatArrayGetSizeInBytes(src->size)));
+  if (!ret) return nullptr;
+  ret->size = src->size;
+  std::memcpy(ret->data, src->data, src->size * sizeof(float));
+  return ret;
+}
 }  // namespace
 
 BasicEngineNative::BasicEngineNative() {
@@ -170,11 +180,56 @@ EdgeTpuApiStatus BasicEngineNative::RunInference(const uint8_t* const input,
                                                  int* const out_size) {
   BASIC_ENGINE_INIT_CHECK();
   const auto& start_time = std::chrono::steady_clock::now();
-  // Assign input data and invoke.
+
+  // Set input tensor to use input buffer and invoke.
+  const int input_tensor_index = interpreter_->inputs()[0];
+  const TfLiteTensor* input_tensor = interpreter_->tensor(input_tensor_index);
+  const TfLiteType input_type = input_tensor->type;
+  const char* input_name = input_tensor->name;
+  std::vector<int> input_dims(
+      input_tensor->dims->data,
+      input_tensor->dims->data + input_tensor->dims->size);
+  if (input_tensor->quantization.type == kTfLiteNoQuantization) {
+    // Deal with legacy model with old quantization parameters.
+    EDGETPU_API_ENSURE(interpreter_->SetTensorParametersReadOnly(
+                           input_tensor_index, input_type, input_name,
+                           input_dims, input_tensor->params,
+                           reinterpret_cast<const char*>(input),
+                           std::min(in_size, input_array_size_)) == kTfLiteOk);
+  } else {
+    // For models with new quantization parameters, deep copy the parameters.
+    EDGETPU_API_ENSURE(input_tensor->quantization.type ==
+                       kTfLiteAffineQuantization);
+    EDGETPU_API_ENSURE(input_tensor->quantization.params);
+    TfLiteQuantization input_quant_clone = input_tensor->quantization;
+    const TfLiteAffineQuantization* input_quant_params =
+        reinterpret_cast<TfLiteAffineQuantization*>(
+            input_tensor->quantization.params);
+    // |input_quant_params_clone| will be owned by |input_quant_clone|, and will
+    // be deallocated by free(). Therefore malloc is used to allocate its
+    // memory here.
+    TfLiteAffineQuantization* input_quant_params_clone =
+        reinterpret_cast<TfLiteAffineQuantization*>(
+            malloc(sizeof(TfLiteAffineQuantization)));
+    input_quant_params_clone->scale =
+        TfLiteFloatArrayCopy(input_quant_params->scale);
+    EDGETPU_API_ENSURE(input_quant_params_clone->scale);
+    input_quant_params_clone->zero_point =
+        TfLiteIntArrayCopy(input_quant_params->zero_point);
+    EDGETPU_API_ENSURE(input_quant_params_clone->zero_point);
+    input_quant_params_clone->quantized_dimension =
+        input_quant_params->quantized_dimension;
+    input_quant_clone.params = input_quant_params_clone;
+    EDGETPU_API_ENSURE(interpreter_->SetTensorParametersReadOnly(
+                           input_tensor_index, input_type, input_name,
+                           input_dims, input_quant_clone,
+                           reinterpret_cast<const char*>(input),
+                           std::min(in_size, input_array_size_)) == kTfLiteOk);
+  }
   uint8_t* input_tensor_ptr = interpreter_->typed_input_tensor<uint8_t>(0);
-  BASIC_ENGINE_NATIVE_ENSURE(input_tensor_ptr,
-                             "typed_input_tensor returns nullptr!");
-  std::memcpy(input_tensor_ptr, input, in_size);
+  BASIC_ENGINE_NATIVE_ENSURE(input_tensor_ptr == input,
+                             "Input tensor does not reuse the given buffer!");
+
   EDGETPU_API_ENSURE(interpreter_->Invoke() == kTfLiteOk);
   // Parse results.
   const auto& output_indices = interpreter_->outputs();

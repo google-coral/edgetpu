@@ -14,8 +14,60 @@
 
 """A basic inference engine."""
 
+import contextlib
+import ctypes
+import numpy
+from ctypes.util import find_library
 from edgetpu.swig.edgetpu_cpp_wrapper import BasicEnginePythonWrapper
 from edgetpu.utils.warning import deprecated
+
+# ctypes definition of GstMapInfo. This is a stable API, guaranteed to be
+# ABI compatible for any past and future GStreamer 1.0 releases.
+# Used to get the underlying memory pointer without any copies, and without
+# native library linking against libgstreamer.
+class _GstMapInfo(ctypes.Structure):
+  _fields_ = [('memory', ctypes.c_void_p),                # GstMemory *memory
+              ('flags', ctypes.c_int),                    # GstMapFlags flags
+              ('data', ctypes.c_void_p),                  # guint8 *data
+              ('size', ctypes.c_size_t),                  # gsize size
+              ('maxsize', ctypes.c_size_t),               # gsize maxsize
+              ('user_data', ctypes.c_void_p * 4),         # gpointer user_data[4]
+              ('_gst_reserved', ctypes.c_void_p * 4)]     # GST_PADDING
+
+# Try to import GStreamer but don't fail if it's not available. If not available
+# we're probably not getting GStreamer buffers as input anyway.
+_libgst = None
+try:
+  import gi
+  gi.require_version('Gst', '1.0')
+  from gi.repository import Gst
+  _libgst = ctypes.CDLL(find_library('gstreamer-1.0'))
+  _libgst.gst_buffer_map.argtypes = [ctypes.c_void_p, ctypes.POINTER(_GstMapInfo), ctypes.c_int]
+  _libgst.gst_buffer_map.restype = ctypes.c_int
+  _libgst.gst_buffer_unmap.argtypes = [ctypes.c_void_p, ctypes.POINTER(_GstMapInfo)]
+  _libgst.gst_buffer_unmap.restype = None
+except (ImportError, ValueError, OSError):
+  pass
+
+def _is_valid_ctypes_input(input):
+  if not isinstance(input, tuple):
+    return False
+  pointer, size = input
+  if not isinstance(pointer, ctypes.c_void_p):
+    return False
+  return isinstance(size, int)
+
+@contextlib.contextmanager
+def _gst_buffer_map(buffer):
+  mapping = _GstMapInfo()
+  ptr = hash(buffer)
+  success = _libgst.gst_buffer_map(ptr, mapping, Gst.MapFlags.READ)
+  if not success:
+    raise RuntimeError('gst_buffer_map failed')
+  try:
+    yield ctypes.c_void_p(mapping.data), mapping.size
+  finally:
+    _libgst.gst_buffer_unmap(ptr, mapping)
 
 class BasicEngine(object):
   """Base inference engine to execute a TensorFlow Lite model on the Edge TPU."""
@@ -55,7 +107,18 @@ class BasicEngine(object):
       can calculate the size and offset for each tensor using :func:`get_all_output_tensors_sizes`,
       :func:`get_num_of_output_tensors`, and :func:`get_output_tensor_size`.
     """
-    result = self._engine.RunInference(input)
+    #TODO(142164990): Add support for io.BytesIO heavily used on Raspberry Pi.
+    #TODO(142164990): Add benchmarks for all supported types to catch regressions.
+    if isinstance(input, bytes):
+      result = self._engine.RunInferenceBytes(input)
+    elif _is_valid_ctypes_input(input):
+      pointer, size = input
+      result = self._engine.RunInferenceRaw(pointer.value, size)
+    elif _libgst and isinstance(input, Gst.Buffer):
+      with _gst_buffer_map(input) as (pointer, size):
+        result = self._engine.RunInferenceRaw(pointer.value, size)
+    else:
+      result = self._engine.RunInference(input)
     latency = self._engine.get_inference_time()
     return (latency, result)
 

@@ -1,3 +1,11 @@
+edgetpu (12.1-1) mendel-chef; urgency=medium
+
+  * Avoid copying of input tensors.
+  * Support Gst.Buffer and bytes objects in run_inference to avoid copies
+  * Fixes to error handling
+
+ -- Coral <coral-support@google.com>  Wed, 30 Oct 2019 15:58:16 -0700
+
 edgetpu (12-1) mendel-chef; urgency=medium
 
   * Use new Bazel-based toolchain to cross-compile with GCC

@@ -13,9 +13,6 @@
 # limitations under the License.
 r"""A demo for object detection.
 
-For Raspberry Pi, you need to install 'feh' as image viewer:
-sudo apt-get install feh
-
 Example (Running under edgetpu repo's root directory):
 
   - Face detection:
@@ -90,7 +87,7 @@ def main():
       relative_coord=False,
       top_k=10)
 
-  # Display result.
+  # Save result.
   if ans:
     for obj in ans:
       print('-----------------------------------------')
@@ -102,14 +99,7 @@ def main():
       # Draw a rectangle.
       draw.rectangle(box, outline='red')
     img.save(output_name)
-    if platform.machine() == 'x86_64':
-      # For gLinux, simply show the image.
-      img.show()
-    elif platform.machine() == 'armv7l':
-      # For Raspberry Pi, you need to install 'feh' to display image.
-      subprocess.Popen(['feh', output_name])
-    else:
-      print('Please check ', output_name)
+    print('Please check ', output_name)
   else:
     print('No object detected!')
 

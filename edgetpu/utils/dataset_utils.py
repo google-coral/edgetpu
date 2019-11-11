@@ -44,4 +44,4 @@ def read_label_file(file_path):
 
 @deprecated
 def ReadLabelFile(file_path):
-  read_label_file(file_path)
+  return read_label_file(file_path)

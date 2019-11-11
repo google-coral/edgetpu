@@ -128,6 +128,23 @@ std::string GetRuntimeVersion();
       return nullptr;
     }
   }
+
+  // numpy typemap greedily applies to any method with params
+  // const uint8_t* input, int in_size so we can't easily map
+  // bytes too.
+  PyObject* RunInferenceBytes(PyObject* input_obj) {
+    return $self->RunInference(
+        reinterpret_cast<uint8_t*>(PyBytes_AS_STRING(input_obj)),
+        static_cast<int>(PyBytes_GET_SIZE(input_obj)));
+  }
+
+  // raw pointer stored as PyLong, size as PyLong.
+  PyObject* BasicEnginePythonWrapper::RunInferenceRaw(PyObject* input_obj,
+                                                      PyObject* size_obj) {
+    return $self->RunInference(
+        reinterpret_cast<uint8_t*>(PyLong_AsVoidPtr(input_obj)),
+        static_cast<int>(PyLong_AsLong(size_obj)));
+  }
 }
 
 

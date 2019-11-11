@@ -79,8 +79,8 @@ Package:edgetpu
 Section: metapackages
 Priority: optional
 Architecture: all
-Depends: edgetpu-compiler (= ${binary:Version}),
-         libedgetpu1-std (= ${binary:Version}) | libedgetpu1-max (= ${binary:Version}),
+Depends: edgetpu-compiler,
+         libedgetpu1-std | libedgetpu1-max,
          ${misc:Depends}
 Description: Edge TPU compiler and runtime
  Installs core components for Edge TPU support.

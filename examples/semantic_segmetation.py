@@ -13,9 +13,6 @@
 # limitations under the License.
 r"""A demo for semantic segmentation.
 
-For Raspberry Pi, you need to install 'feh' as image viewer:
-sudo apt-get install feh
-
 Example (Running under edgetpu repo's root directory):
 
   python3 examples/semantic_segmentation.py \
@@ -136,15 +133,7 @@ def main():
   concated_image.paste(vis_result, (width, 0))
 
   concated_image.save(output_name)
-  # Display result.
-  if platform.machine() == 'x86_64':
-    # For gLinux, simply show the image.
-    concated_image.show()
-  elif platform.machine() == 'armv7l':
-    # For Raspberry Pi, you need to install 'feh' to display image.
-    subprocess.Popen(['feh', output_name])
-  else:
-    print('Please check ', output_name)
+  print('Please check ', output_name)
 
 
 if __name__ == '__main__':

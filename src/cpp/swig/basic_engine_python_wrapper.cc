@@ -57,11 +57,13 @@ PyObject* BasicEnginePythonWrapper::RunInference(const uint8_t* input,
   ENSURE_ENGINE_INIT();
   float const* output;
   int out_size;
+  EdgeTpuApiStatus status;
   // Let RunInference function play nicely with Python threading.
   Py_BEGIN_ALLOW_THREADS;
-  ENSURE_ENGINE_STATUS(
-      engine_->RunInference(input, in_size, &output, &out_size));
+  status = engine_->RunInference(input, in_size, &output, &out_size);
   Py_END_ALLOW_THREADS;
+  // Report errors after taking the GIL, or we crash.
+  ENSURE_ENGINE_STATUS(status);
   // Parse results.
   npy_intp dims[1] = {out_size};
   return PyArray_SimpleNewFromData(1, dims, NPY_FLOAT, (void*)(output));
