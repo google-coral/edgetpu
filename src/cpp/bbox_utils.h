@@ -21,10 +21,10 @@ namespace coral {
 // xmin = xcenter - half_w
 // xmax = xcenter + half_w
 struct BoxCornerEncoding {
-  float ymin;
   float xmin;
-  float ymax;
+  float ymin;
   float xmax;
+  float ymax;
 
   inline std::string DebugString() const {
     return absl::Substitute("ymin=$0,xmin=$1,ymax=$2,xmax=$3", ymin, xmin, ymax,
