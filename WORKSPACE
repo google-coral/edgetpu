@@ -2,10 +2,9 @@ workspace(name = "edgetpu")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
 
-TENSORFLOW_COMMIT = "5d0b55dd4a00c74809e5b32217070a26ac6ef823"
-# One way to find this SHA256 number is to download the corresponding tar.gz file
-# and then run `sha256sum` on local machine.
-TENSORFLOW_SHA256 = "2602e177164e7152bd8c7a9a1cab71898ec84ae707ca442cafbd966abdbb07b7"
+TENSORFLOW_COMMIT = "d855adfc5a0195788bf5f92c3c7352e638aa1109"
+# Command to calculate: curl -OL <FILE-URL> | sha256sum | awk '{print $1}'
+TENSORFLOW_SHA256 = "b8a691dbea2bb028fa8f7ce407b70ad236dae0a8705c8010dc7bad8af7e93bac"
 
 # Be consistent with tensorflow/WORKSPACE.
 http_archive(

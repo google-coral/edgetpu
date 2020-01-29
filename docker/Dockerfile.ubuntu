@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y \
   python3-numpy \
   python3-setuptools \
   python3-wheel \
+  python3-six \
   libpython3-dev \
   libpython3-dev:armhf \
   libpython3-dev:arm64 \

@@ -100,7 +100,7 @@ limitations under the License.
 #define EDGETPU_EXPORT __declspec(dllimport)
 #endif  // EDGETPU_COMPILE_LIBRARY
 #else
-#define EDGETPU_EXPORT
+#define EDGETPU_EXPORT __attribute__((visibility("default")))
 #endif  // _WIN32
 
 namespace edgetpu {

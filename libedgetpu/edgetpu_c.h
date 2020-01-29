@@ -13,48 +13,59 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-//  This header defines C API to provide edge TPU support for TensorFlow Lite
-//  framework. It is only available for non-NNAPI use cases.
 //
-//  Typical API usage from C++ code involves serveral steps:
+// This header defines C API to provide edge TPU support for TensorFlow Lite
+// framework. It is only available for non-NNAPI use cases.
 //
-//  1. Create tflite::FlatBufferModel which may contain edge TPU custom op.
+// Typical API usage from C++ code involves serveral steps:
 //
-//  auto model =
-//     tflite::FlatBufferModel::BuildFromFile(model_file_name.c_str());
+// 1. Create tflite::FlatBufferModel which may contain edge TPU custom op.
 //
-//  2. Create tflite::Interpreter.
+// auto model =
+//    tflite::FlatBufferModel::BuildFromFile(model_file_name.c_str());
 //
-//  tflite::ops::builtin::BuiltinOpResolver resolver;
-//  std::unique_ptr<tflite::Interpreter> interpreter;
-//  tflite::InterpreterBuilder(model, resolver)(&interpreter);
+// 2. Create tflite::Interpreter.
 //
-//  3. Enumerate edge TPU devices.
+// tflite::ops::builtin::BuiltinOpResolver resolver;
+// std::unique_ptr<tflite::Interpreter> interpreter;
+// tflite::InterpreterBuilder(model, resolver)(&interpreter);
 //
-//  size_t num_devices;
-//  std::unique_ptr<edgetpu_device, decltype(&edgetpu_free_devices)> devices(
-//      edgetpu_list_devices(&num_devices), &edgetpu_free_devices);
+// 3. Enumerate edge TPU devices.
 //
-//  assert(num_devices > 0);
-//  const auto& device = devices.get()[0];
+// size_t num_devices;
+// std::unique_ptr<edgetpu_device, decltype(&edgetpu_free_devices)> devices(
+//     edgetpu_list_devices(&num_devices), &edgetpu_free_devices);
 //
-//  4. Modify interpreter with the delegate.
+// assert(num_devices > 0);
+// const auto& device = devices.get()[0];
 //
-//  auto* delegate =
-//      edgetpu_create_delegate(device.type, device.path, nullptr, 0);
-//  interpreter->ModifyGraphWithDelegate({delegate, edgetpu_free_delegate});
+// 4. Modify interpreter with the delegate.
 //
-//  5. Prepare input tensors and run inference.
+// auto* delegate =
+//     edgetpu_create_delegate(device.type, device.path, nullptr, 0);
+// interpreter->ModifyGraphWithDelegate({delegate, edgetpu_free_delegate});
 //
-//  interpreter->AllocateTensors();
-//    .... (Prepare input tensors)
-//  interpreter->Invoke();
-//    .... (Retrieve the result from output tensors)
+// 5. Prepare input tensors and run inference.
+//
+// interpreter->AllocateTensors();
+//   .... (Prepare input tensors)
+// interpreter->Invoke();
+//   .... (Retrieve the result from output tensors)
 
 #ifndef TFLITE_PUBLIC_EDGETPU_C_H_
 #define TFLITE_PUBLIC_EDGETPU_C_H_
 
 #include "tensorflow/lite/context.h"
+
+#if defined(_WIN32)
+#ifdef EDGETPU_COMPILE_LIBRARY
+#define EDGETPU_EXPORT __declspec(dllexport)
+#else
+#define EDGETPU_EXPORT __declspec(dllimport)
+#endif  // EDGETPU_COMPILE_LIBRARY
+#else
+#define EDGETPU_EXPORT __attribute__((visibility("default")))
+#endif  // _WIN32
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,28 +87,27 @@ struct edgetpu_option {
 };
 
 // Returns array of connected edge TPU devices.
-struct edgetpu_device* edgetpu_list_devices(size_t* num_devices);
+EDGETPU_EXPORT struct edgetpu_device* edgetpu_list_devices(size_t* num_devices);
 
 // Frees array returned by `edgetpu_list_devices`.
-void edgetpu_free_devices(struct edgetpu_device* dev);
+EDGETPU_EXPORT void edgetpu_free_devices(struct edgetpu_device* dev);
 
 // Creates a delegate which handles all edge TPU custom ops inside
 // `tflite::Interpreter`. Options must be available only during the call of this
 // function.
-TfLiteDelegate* edgetpu_create_delegate(enum edgetpu_device_type type,
-                                        const char* name,
-                                        const struct edgetpu_option* options,
-                                        size_t num_options);
+EDGETPU_EXPORT TfLiteDelegate* edgetpu_create_delegate(
+    enum edgetpu_device_type type, const char* name,
+    const struct edgetpu_option* options, size_t num_options);
 
 // Frees delegate returned by `edgetpu_create_delegate`.
-void edgetpu_free_delegate(TfLiteDelegate* delegate);
+EDGETPU_EXPORT void edgetpu_free_delegate(TfLiteDelegate* delegate);
 
 // Sets verbosity of operating logs related to edge TPU.
 // Verbosity level can be set to [0-10], in which 10 is the most verbose.
-void edgetpu_verbosity(int verbosity);
+EDGETPU_EXPORT void edgetpu_verbosity(int verbosity);
 
 // Returns the version of edge TPU runtime stack.
-const char* edgetpu_version();
+EDGETPU_EXPORT const char* edgetpu_version();
 
 #ifdef __cplusplus
 }  // extern "C"

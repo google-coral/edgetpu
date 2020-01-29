@@ -165,6 +165,7 @@ void ResizeImage(const ImageDims& in_dims, const uint8_t* in,
   auto* params = reinterpret_cast<TfLiteResizeBilinearParams*>(
       malloc(sizeof(TfLiteResizeBilinearParams)));
   params->align_corners = false;
+  params->half_pixel_centers = false;
   interpreter->AddNodeWithParameters({0, 1}, {2}, nullptr, 0, params, resize_op,
                                      nullptr);
   interpreter->AllocateTensors();

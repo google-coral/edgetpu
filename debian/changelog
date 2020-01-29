@@ -1,3 +1,10 @@
+edgetpu (13.0) stable; urgency=medium
+
+  * Update Edge TPU binary compiler with bug fixes
+  * Update Edge TPU runtime to version 13
+
+ -- Coral <coral-support@google.com>  Tue, 28 Jan 2020 15:58:19 -0700
+
 edgetpu (12.1-1) mendel-chef; urgency=medium
 
   * Avoid copying of input tensors.
