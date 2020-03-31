@@ -28,8 +28,8 @@ TEST(BboxTest, IntersectionOverUnion) {
 }
 
 TEST(DetectionCandidateTest, CompareDetectionCandidate) {
-  DetectionCandidate a({BoxCornerEncoding({0.0, 0.0, 1.0, 1.0}), 1, 0.2}),
-      b({BoxCornerEncoding({0.0, 0.0, 1.0, 1.0}), 1, 0.5});
+  DetectionCandidate a{BoxCornerEncoding({0.0, 0.0, 1.0, 1.0}), 1, 0.2},
+      b{BoxCornerEncoding({0.0, 0.0, 1.0, 1.0}), 1, 0.5};
   // Equal.
   EXPECT_TRUE(a == DetectionCandidate(
                        {BoxCornerEncoding({0.0, 0.0, 1.0, 1.0}), 1, 0.2}));
@@ -44,7 +44,7 @@ TEST(DetectionCandidateTest, CompareDetectionCandidate) {
   EXPECT_TRUE(a != b);
   EXPECT_FALSE(a == b);
   // Assign.
-  DetectionCandidate tmp({BoxCornerEncoding({0.0, 0.0, 0.0, 0.0}), 5, 0.7});
+  DetectionCandidate tmp{BoxCornerEncoding({0.0, 0.0, 0.0, 0.0}), 5, 0.7};
   EXPECT_TRUE(a != tmp);
   tmp = a;
   EXPECT_TRUE(a == tmp);

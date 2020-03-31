@@ -23,10 +23,10 @@ class BasicEngine {
   explicit BasicEngine(
       std::unique_ptr<tflite::FlatBufferModel> model,
       std::unique_ptr<tflite::ops::builtin::BuiltinOpResolver> resolver);
-  // For input, we assume there is only one tensor with type uint8_t.
+  // For input, we assume there is only one tensor.
   // The input for RunInference is the flattened array of input tensor.
-  std::vector<std::vector<float>> RunInference(
-      const std::vector<uint8_t>& input);
+  template <typename T>
+  std::vector<std::vector<float>> RunInference(const std::vector<T>& input);
 
   // Functions to get/check attributes.
 
@@ -36,10 +36,10 @@ class BasicEngine {
   std::string model_path() const;
   // Gets shape of input tensor.
   std::vector<int> get_input_tensor_shape() const;
-  // Gets shapes of output tensors. We assume that all output tensors are
+  // Gets sizes of output tensors. We assume that all output tensors are
   // in 1 dimension so the output is an array of lengths for each output
   // tensor.
-  std::vector<int> get_all_output_tensors_sizes() const;
+  std::vector<size_t> get_all_output_tensors_sizes() const;
   // Gets time consumed for last inference (milliseconds).
   float get_inference_time() const;
 

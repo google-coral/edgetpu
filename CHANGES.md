@@ -4,10 +4,18 @@ This is a non-exhaustive summary of changes to the Edge TPU library, compiler, a
 
 For pre-built downloads, see [coral.ai/software](https://coral.ai/software/).
 
+## Source code update, Edge TPU library 2.14.0 and compiler 2.1.302470888 (March 2020)
+
++   C++ support for model pipelining
++   Update Edge TPU python library to 2.14.0. New `size` parameter for `run_inference`
++   Compiler update (new compiler options `num_segments` and `intermediate_tensors`)
++   EfficientNet embedding extractor available for on-device learning with backprop
+
 
 ## Edge TPU runtime v13 and compiler 2.0.291256449 (January 2020)
 
 +   Bug fixes
++   Added support for ops: ExpandDims, Pack, Quantize, Sum, and TransposeConv
 +   First runtime release made available for Mac and Windows (compiler is still Linux only)
 
 

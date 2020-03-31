@@ -99,7 +99,7 @@ void CloneTensors(
 }
 
 // Recalcuates tensor indices given a new tensor name to tensor index map.
-std::vector<int32_t> RecalcualteTensorIndices(
+std::vector<int32_t> RecalculateTensorIndices(
     const std::vector<int32_t>& old_tensor_indices, const tflite::Model& model,
     const std::map<std::string, int32_t>& new_tensor_name_to_tensor_index_map) {
   const auto* subgraphs = model.subgraphs();
@@ -161,10 +161,10 @@ void CloneOperators(
 
     // Recalculate input and output indices of this operator.
     Offset<Vector<int32_t>> new_input_index_vector =
-        builder->CreateVector<int32_t>(RecalcualteTensorIndices(
+        builder->CreateVector<int32_t>(RecalculateTensorIndices(
             op_t.inputs, model, tensor_name_to_tensor_index_map));
     Offset<Vector<int32_t>> new_output_index_vector =
-        builder->CreateVector<int32_t>(RecalcualteTensorIndices(
+        builder->CreateVector<int32_t>(RecalculateTensorIndices(
             op_t.outputs, model, tensor_name_to_tensor_index_map));
 
     const auto builtin_options_type = op_t.builtin_options.type;
@@ -182,10 +182,22 @@ void CloneOperators(
   }
 }
 
+// Returns index of a tensor specified by name. If non-found, return -1;
+int FindOutputTensor(const std::string& name,
+                     const tflite::SubGraphT& subgraph_t) {
+  for (const auto& i : subgraph_t.outputs) {
+    if (subgraph_t.tensors[i]->name == name) {
+      return i;
+    }
+  }
+  return -1;
+}
+
 // Concanetate two tflite models, assuming each model has only one subgraph.
 // |builder| contains the result model.
 void ConcatModels(const tflite::Model& model0, const tflite::Model& model1,
-                  flatbuffers::FlatBufferBuilder* builder) {
+                  flatbuffers::FlatBufferBuilder* builder,
+                  const std::vector<std::string>& bypass_output_tensors = {}) {
   CHECK(builder);
 
   CHECK(model0.subgraphs());
@@ -226,10 +238,23 @@ void ConcatModels(const tflite::Model& model0, const tflite::Model& model1,
   tflite::SubGraphT subgraph0_t, subgraph1_t;
   subgraph0.UnPackTo(&subgraph0_t);
   subgraph1.UnPackTo(&subgraph1_t);
-  std::vector<int32_t> inputs = RecalcualteTensorIndices(
+  std::vector<int32_t> inputs = RecalculateTensorIndices(
       subgraph0_t.inputs, model0, tensor_name_to_tensor_index_map);
-  std::vector<int32_t> outputs = RecalcualteTensorIndices(
+  std::vector<int32_t> outputs = RecalculateTensorIndices(
       subgraph1_t.outputs, model1, tensor_name_to_tensor_index_map);
+
+  std::vector<int32_t> bypasses;
+  for (const auto& bypass_name : bypass_output_tensors) {
+    auto index = FindOutputTensor(bypass_name, subgraph0_t);
+    CHECK_GE(index, 0) << "Unable to find bypass output tensor " << bypass_name;
+    bypasses.push_back(index);
+  }
+  std::vector<int32_t> bypasses_recalc = RecalculateTensorIndices(
+      bypasses, model0, tensor_name_to_tensor_index_map);
+  // Add the bypass indices to the output list.
+  for (const auto o : bypasses_recalc) {
+    outputs.push_back(o);
+  }
 
   // Merge operator codes.
   const int num_model0_opcodes = model0.operator_codes()->size();
@@ -277,15 +302,14 @@ void ConcatModels(const tflite::Model& model0, const tflite::Model& model1,
                             : 0),
       merged_buffers);
 
-  // TODO: find out whether need to set metadata_buffer.
-
   tflite::FinishModelBuffer(*builder, merged_model);
 }
 }  // namespace
 
 void ConcatTfliteModels(const std::string& model0_path,
                         const std::string& model1_path,
-                        const std::string& output_path) {
+                        const std::string& output_path,
+                        const std::vector<std::string>& bypass_output_tensors) {
   std::string model0_contents;
 
   ReadFileOrDie(model0_path, &model0_contents);
@@ -299,7 +323,7 @@ void ConcatTfliteModels(const std::string& model0_path,
 
   // Merge the two models.
   flatbuffers::FlatBufferBuilder builder(/*initial_size=*/1024 * 1024);
-  ConcatModels(*model0, *model1, &builder);
+  ConcatModels(*model0, *model1, &builder, bypass_output_tensors);
 
   // Write result model to file.
   const uint8_t* buffer = builder.GetBufferPointer();

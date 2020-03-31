@@ -52,10 +52,23 @@ class TestExceptions(unittest.TestCase):
       error_message = str(e)
     self.assertEqual('tensor_index doesn\'t exist!', error_message)
 
+  def test_inference_with_bad_input_size(self):
+    engine = BasicEngine(
+        test_utils.test_data_path('mobilenet_v1_1.0_224_quant.tflite'))
+    expected_size = engine.required_input_array_size()
+    input_data = test_utils.generate_random_input(1, expected_size - 1)
+    error_message = None
+    try:
+      engine.run_inference(input_data, expected_size - 1)
+    except AssertionError as e:
+      error_message = str(e)
+    self.assertEqual('Wrong input size={}, expected={}.'.format(
+        expected_size - 1, expected_size), error_message)
+
   def test_imprinting_engine_saving_without_training(self):
     model_list = [
-        'imprinting/mobilenet_v1_1.0_224_l2norm_quant.tflite',
-        'imprinting/mobilenet_v1_1.0_224_l2norm_quant_edgetpu.tflite'
+        'mobilenet_v1_1.0_224_l2norm_quant.tflite',
+        'mobilenet_v1_1.0_224_l2norm_quant_edgetpu.tflite'
     ]
     for model in model_list:
       error_message = None

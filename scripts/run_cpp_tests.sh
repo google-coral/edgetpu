@@ -13,127 +13,170 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-set -e
-set -x
+
+# color scheme finish
+red='tput setaf 1'
+green='tput setaf 2'
+ncreset='tput sgr0'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/prepare_test_env.sh"
+source "${SCRIPT_DIR}/setup_env.sh"
 
-function run_test {
-  if [[ "${TEST_TYPE}" == "installed" ]]; then
-    pushd /tmp
-      $@
-    popd
-  else
-    env LD_LIBRARY_PATH="${LD_LIBRARY_PATH}" $@
-  fi
-}
-
-OUT_DIR="${SCRIPT_DIR}/../out/${CPU}"
-TEST_DATA_DIR="${SCRIPT_DIR}/../test_data"
+if [[ "${CPU}" == "armv7a" ]]; then
+  REQUEST_FOR_MULTI_EDGETPU_TEST=1000
+else
+  REQUEST_FOR_MULTI_EDGETPU_TEST=3000
+fi
 
 # Run tests.
-TESTS_DIR="${OUT_DIR}/tests/src/cpp"
+run_env "${CPP_TESTS_DIR}/error_reporter_test"
+${green}; echo "complete error_ reporter_test"; ${ncreset}
 
-run_test "${TESTS_DIR}/error_reporter_test"
-run_test "${TESTS_DIR}/version_test"
-run_test "${TESTS_DIR}/bbox_utils_test"
+run_env "${CPP_TESTS_DIR}/version_test"
+${green}; echo "complete version_test"; ${ncreset}
 
-run_test "${TESTS_DIR}/basic/basic_engine_native_test" \
-     --test_data_dir="${TEST_DATA_DIR}"
-run_test "${TESTS_DIR}/basic/basic_engine_test" \
-     --test_data_dir="${TEST_DATA_DIR}"
-run_test "${TESTS_DIR}/basic/edgetpu_resource_manager_test"
-run_test "${TESTS_DIR}/basic/inference_repeatability_test" \
+run_env "${CPP_TESTS_DIR}/bbox_utils_test"
+${green}; echo "complete bbox_utilis_test"; ${ncreset}
+
+run_env "${CPP_TESTS_DIR}/basic/basic_engine_native_test" \
+  --test_data_dir="${TEST_DATA_DIR}"
+${green}; echo "complete basic_engine_native_test";${ncreset}
+
+run_env "${CPP_TESTS_DIR}/basic/basic_engine_test" \
+  --test_data_dir="${TEST_DATA_DIR}"
+${green}; echo "complete basic_engine_test";${ncreset}
+
+run_env "${CPP_TESTS_DIR}/basic/edgetpu_resource_manager_test"
+${green}; echo "complete edgetpu_resource_manager_test"; ${ncreset}
+
+run_env "${CPP_TESTS_DIR}/basic/segmentation_models_test" \
+    --test_data_dir="${TEST_DATA_DIR}"
+${green}; echo "complete segmentation_models_test"; ${ncreset}
+
+run_env "${CPP_TESTS_DIR}/basic/embedding_extractor_models_test" \
+    --test_data_dir="${TEST_DATA_DIR}"
+${green}; echo "complete embedding_extractor_models_test"; ${ncreset}
+
+run_env "${CPP_TESTS_DIR}/basic/float_input_model_test" \
+    --test_data_dir="${TEST_DATA_DIR}"
+${green}; echo "complete basic/float_input_model_test";${ncreset}
+
+run_env "${CPP_TESTS_DIR}/basic/inference_repeatability_test" \
     --stress_test_runs=20 \
     --test_data_dir="${TEST_DATA_DIR}"
-run_test "${TESTS_DIR}/basic/inference_stress_test"  \
+${green}; echo "complete interference_repeatability_test"; ${ncreset}
+
+run_env "${CPP_TESTS_DIR}/basic/inference_stress_test"  \
     --stress_test_runs=20 \
     --stress_with_sleep_test_runs=5 \
     --test_data_dir="${TEST_DATA_DIR}"
-run_test "${TESTS_DIR}/basic/model_loading_stress_test" \
+${green}; echo "complete interference_stress_test";${ncreset}
+
+run_env "${CPP_TESTS_DIR}/basic/model_loading_stress_test" \
     --stress_test_runs=20 \
     --test_data_dir="${TEST_DATA_DIR}"
-run_test "${TESTS_DIR}/basic/models_test" \
-    --test_data_dir="${TEST_DATA_DIR}"
-run_test "${TESTS_DIR}/classification/engine_test" \
-    --test_data_dir="${TEST_DATA_DIR}"
-run_test "${TESTS_DIR}/classification/models_test" \
-    --test_data_dir="${TEST_DATA_DIR}"
+${green}; echo "complete model_loading_stress_test";${ncreset}
 
-run_test "${TESTS_DIR}/detection/engine_test" \
+run_env "${CPP_TESTS_DIR}/classification/engine_test" \
+  --test_data_dir="${TEST_DATA_DIR}"
+${green}; echo "complte classification/engine_test";${ncreset}
+
+run_env "${CPP_TESTS_DIR}/classification/models_test" \
+  --test_data_dir="${TEST_DATA_DIR}" \
+  --test_case_csv="classification_test_cases.csv"
+${green}; echo "complete classfication/models_test";${ncreset}
+
+run_env "${CPP_TESTS_DIR}/detection/engine_test" \
     --test_data_dir="${TEST_DATA_DIR}"
-run_test "${TESTS_DIR}/detection/models_test" \
+${green}; echo "complete detection/engine_test";${ncreset}
+
+run_env "${CPP_TESTS_DIR}/detection/models_test" \
+  --test_data_dir="${TEST_DATA_DIR}"
+${green}; echo "complete detection/models_test complete";${ncreset}
+
+run_env "${CPP_TESTS_DIR}/learn/imprinting/engine_native_test" \
+  --test_data_dir="${TEST_DATA_DIR}"
+${green}; echo "complete imprinting/engine_native_test";${ncreset}
+
+run_env "${CPP_TESTS_DIR}/learn/imprinting/engine_test" \
+  --test_data_dir="${TEST_DATA_DIR}"
+${green}; echo "complete imprinting/engine_test";${ncreset}
+
+run_env "${CPP_TESTS_DIR}/learn/backprop/cross_entropy_loss_test" \
+  --test_data_dir="${TEST_DATA_DIR}"
+${green}; echo "complete backprop/cross_entropy_loss_test";${ncreset}
+
+run_env "${CPP_TESTS_DIR}/learn/backprop/sgd_updater_test" \
+  --test_data_dir="${TEST_DATA_DIR}"
+${green}; echo "complete backprop/sgd_updater_test";${ncreset}
+
+run_env "${CPP_TESTS_DIR}/learn/backprop/test_utils_test" \
+  --test_data_dir="${TEST_DATA_DIR}"
+${green}; echo "complete backprop/test_utils_test";${ncreset}
+
+run_env "${CPP_TESTS_DIR}/learn/backprop/multi_variate_normal_distribution_test" \
+  --test_data_dir="${TEST_DATA_DIR}"
+${green}; echo "complete backprop/multi_variate_normal_distribution_test";${ncreset}
+
+run_env "${CPP_TESTS_DIR}/learn/backprop/softmax_test" \
+  --test_data_dir="${TEST_DATA_DIR}"
+${green}; echo "backprop/softmax_test complete";${ncreset}
+
+run_env "${CPP_TESTS_DIR}/learn/backprop/fully_connected_test" \
+  --test_data_dir="${TEST_DATA_DIR}"
+${green}; echo "complete backprop/fully_connected_test";${ncreset}
+
+run_env "${CPP_TESTS_DIR}/learn/backprop/softmax_regression_model_test" \
+  --test_data_dir="${TEST_DATA_DIR}"
+${green}; echo "complete backprop/softmax_regression_model_test";${ncreset}
+
+run_env "${CPP_TESTS_DIR}/learn/utils_test" \
+  --test_data_dir="${TEST_DATA_DIR}"
+${green}; echo "complete learn/utils_test";${ncreset}
+
+run_env "${CPP_TESTS_DIR}/posenet/models_test" \
     --test_data_dir="${TEST_DATA_DIR}"
+${green}; echo "complete posenet/models_test";${ncreset}
 
-run_test "${TESTS_DIR}/learn/imprinting/engine_native_test" \
+run_env "${CPP_TESTS_DIR}/posenet/posenet_decoder_test"
+${green}; echo "complete posenet/posenet_decoder_test";${ncreset}
+
+#run_env "${CPP_TESTS_DIR}/tools/tflite_graph_util_test" \
+#    --test_data_dir="${TEST_DATA_DIR}"
+#${green}; echo "complete tools/tflite_graph_util_test";${ncreset}
+
+# Multiple Edge TPU tests: need 2 TPU at least.
+while [[ $(count_edgetpus) -lt 2 ]]; do
+  echo "You need at least two Edge TPU devices plugged in to run the following tests."
+  echo "Press Enter when ready."
+  read LINE
+done
+
+run_env "${CPP_TESTS_DIR}/basic/multiple_tpus_inference_stress_test" \
     --test_data_dir="${TEST_DATA_DIR}"
-run_test "${TESTS_DIR}/learn/imprinting/engine_test" \
-    --test_data_dir="${TEST_DATA_DIR}"
-run_test "${TESTS_DIR}/learn/utils_test" \
-    --test_data_dir="${TEST_DATA_DIR}"
-
-run_test "${TESTS_DIR}/posenet/models_test" \
-    --test_data_dir="${TEST_DATA_DIR}"
-
-if [[ -f "${TESTS_DIR}/experimental/experimental_models_test" ]]; then
-  run_test "${TESTS_DIR}/experimental/experimental_models_test" \
-      --test_data_dir="${TEST_DATA_DIR}"
-fi
-
-disable_cpu_scaling
-
-BENCHMARKS_DIR="${OUT_DIR}/benchmarks/src/cpp"
-
-# Run benchmarks.
-run_test "${BENCHMARKS_DIR}/basic/models_benchmark" \
-    --benchmark_out="${SCRIPT_DIR}/benchmark_${CPU}_${RUNTIME_PERF}.csv" \
-    --benchmark_out_format=csv \
-    --test_data_dir="${TEST_DATA_DIR}"
-
-run_test "${BENCHMARKS_DIR}/basic/edgetpu_resource_manager_benchmark" \
-    --benchmark_out="${SCRIPT_DIR}/resource_manager_benchmark_${CPU}_${RUNTIME_PERF}.csv" \
-    --benchmark_out_format=csv \
-
-run_test "${BENCHMARKS_DIR}/posenet/models_benchmark" \
-    --benchmark_out="${SCRIPT_DIR}/posenet_benchmark_${CPU}_${RUNTIME_PERF}.csv" \
-    --benchmark_out_format=csv \
-    --test_data_dir="${TEST_DATA_DIR}"
-
-if [[ -f "${BENCHMARKS_DIR}/experimental/experimental_models_benchmark" ]]; then
-  run_test "${BENCHMARKS_DIR}/experimental/experimental_models_benchmark" \
-      --benchmark_out="${SCRIPT_DIR}/exp_benchmark_${CPU}_${RUNTIME_PERF}.csv" \
-      --benchmark_out_format=csv \
-      --test_data_dir="${TEST_DATA_DIR}"
-fi
-
-# Multiple Edge TPU tests.
-echo "To run the following tests, please insert additional Edge TPU if only one Edge TPU is connected right now."
-echo "Press Enter when ready."
-read LINE
-
-echo "Run multiple edgetpu tests..."
-run_test "${TESTS_DIR}/basic/multiple_tpus_inference_stress_test" \
-    --test_data_dir="${TEST_DATA_DIR}"
+${green}; echo "complete multiple_tpus_inference_stress_test"; ${ncreset}
 
 # Tools.
-TOOLS_DIR="${OUT_DIR}/tools"
-
-run_test "${TOOLS_DIR}/multiple_tpus_performance_analysis" \
+run_env "${CPP_TOOLS_DIR}/multiple_tpus_performance_analysis" \
     --test_data_dir="${TEST_DATA_DIR}" \
     --num_requests="${REQUEST_FOR_MULTI_EDGETPU_TEST}"
+${green}; echo "multiple_tpus_performance_analysis and test complete"; ${ncreset}
+# pipeline tests: need 4 TPU at least.
 
-# Examples.
-EXAMPLES_DIR="${OUT_DIR}/examples"
+while [[ $(count_edgetpus) -lt 4 ]]; do
+  echo "You need at least Four Edge TPU devices plugged in to run the following tests."
+  echo "Press Enter when ready."
+  read LINE
+done
 
-run_test "${EXAMPLES_DIR}/two_models_one_tpu" \
-  "${TEST_DATA_DIR}/mobilenet_v2_1.0_224_inat_bird_quant_edgetpu.tflite" \
-  "${TEST_DATA_DIR}/mobilenet_v2_1.0_224_inat_plant_quant_edgetpu.tflite" \
-  "${TEST_DATA_DIR}/bird.bmp" \
-  "${TEST_DATA_DIR}/sunflower.bmp"
+run_env "${CPP_TESTS_DIR}/pipeline/pipelined_model_runner_test" \
+  --test_data_dir="${TEST_DATA_DIR}"
+${green}; echo "complete pipeline/pipelined_model_runner_test";${ncreset}
 
-run_test "${EXAMPLES_DIR}/two_models_two_tpus_threaded" \
-  "${TEST_DATA_DIR}/mobilenet_v2_1.0_224_inat_bird_quant_edgetpu.tflite" \
-  "${TEST_DATA_DIR}/mobilenet_v2_1.0_224_inat_plant_quant_edgetpu.tflite" \
-  "${TEST_DATA_DIR}/bird.bmp" \
-  "${TEST_DATA_DIR}/sunflower.bmp"
+run_env "${CPP_TESTS_DIR}/pipeline/models_test" \
+  --test_data_dir="${TEST_DATA_DIR}"
+${green}; echo "complete pipeline/models_test";${ncreset}
+
+run_env "${CPP_TESTS_DIR}/pipeline/internal/segment_runner_test" \
+  --test_data_dir="${TEST_DATA_DIR}"
+${green}; echo "complete pipeline/internal/segment_runner_test";${ncreset}

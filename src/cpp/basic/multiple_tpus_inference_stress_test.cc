@@ -90,7 +90,7 @@ TEST_F(MultipleTpusStressTest, MobileNetV2) {
   CheckResultsFunc check_results =
       [](const std::vector<std::vector<float>>& results) {
         ASSERT_EQ(1, results.size());
-        EXPECT_GT(results[0][286], 0.79);  // 286: Egyptian cat
+        EXPECT_GT(results[0][286], 0.75);  // 286: Egyptian cat
       };
   StressTest("mobilenet_v2_1.0_224_quant_edgetpu.tflite", "cat.bmp",
              check_results);
@@ -101,7 +101,6 @@ TEST_F(MultipleTpusStressTest, InceptionV1) {
       [](const std::vector<std::vector<float>>& results) {
         ASSERT_EQ(1, results.size());
         EXPECT_GT(results[0][282], 0.38);  // 282: tabby, tabby cat
-        EXPECT_GT(results[0][286], 0.38);  // 286: Egyptian cat
       };
   StressTest("inception_v1_224_quant_edgetpu.tflite", "cat.bmp", check_results);
 }
@@ -110,7 +109,6 @@ TEST_F(MultipleTpusStressTest, InceptionV2) {
   CheckResultsFunc check_results =
       [](const std::vector<std::vector<float>>& results) {
         ASSERT_EQ(1, results.size());
-        EXPECT_GT(results[0][282], 0.23);  // 282: tabby, tabby cat
         EXPECT_GT(results[0][286], 0.62);  // 286: Egyptian cat
       };
   StressTest("inception_v2_224_quant_edgetpu.tflite", "cat.bmp", check_results);
@@ -120,8 +118,7 @@ TEST_F(MultipleTpusStressTest, InceptionV3) {
   CheckResultsFunc check_results =
       [](const std::vector<std::vector<float>>& results) {
         ASSERT_EQ(1, results.size());
-        EXPECT_GT(results[0][282], 0.59);  // 282: tabby, tabby cat
-        EXPECT_GT(results[0][286], 0.29);  // 286: Egyptian cat
+        EXPECT_GT(results[0][282], 0.5);  // 282: tabby, tabby cat
       };
   StressTest("inception_v3_299_quant_edgetpu.tflite", "cat.bmp", check_results);
 }
@@ -130,31 +127,30 @@ TEST_F(MultipleTpusStressTest, InceptionV4) {
   CheckResultsFunc check_results =
       [](const std::vector<std::vector<float>>& results) {
         ASSERT_EQ(1, results.size());
-        EXPECT_GT(results[0][282], 0.41);  // 282: tabby, tabby cat
-        EXPECT_GT(results[0][286], 0.33);  // 286: Egyptian cat
+        EXPECT_GT(results[0][282], 0.3);  // 282: tabby, tabby cat
       };
   StressTest("inception_v4_299_quant_edgetpu.tflite", "cat.bmp", check_results);
 }
 
-TEST_F(MultipleTpusStressTest, MobileNetV1Ssd) {
+TEST_F(MultipleTpusStressTest, SsdMobileNetV1) {
   CheckResultsFunc check_results =
       [](const std::vector<std::vector<float>>& results) {
         ASSERT_EQ(4, results.size());
         EXPECT_EQ(16, results[1][0]);  // 16: cat
         EXPECT_GT(results[2][0], 0.79);
       };
-  StressTest("mobilenet_ssd_v1_coco_quant_postprocess_edgetpu.tflite",
+  StressTest("ssd_mobilenet_v1_coco_quant_postprocess_edgetpu.tflite",
              "cat.bmp", check_results);
 }
 
-TEST_F(MultipleTpusStressTest, MobileNetV2Ssd) {
+TEST_F(MultipleTpusStressTest, SsdMobileNetV2) {
   CheckResultsFunc check_results =
       [](const std::vector<std::vector<float>>& results) {
         ASSERT_EQ(4, results.size());
         EXPECT_EQ(16, results[1][0]);  // 16: cat
         EXPECT_GT(results[2][0], 0.96);
       };
-  StressTest("mobilenet_ssd_v2_coco_quant_postprocess_edgetpu.tflite",
+  StressTest("ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite",
              "cat.bmp", check_results);
 }
 

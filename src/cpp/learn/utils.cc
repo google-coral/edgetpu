@@ -48,7 +48,7 @@ int FindOrCreateOpcode(const tflite::BuiltinOperator target_op,
 }
 
 // Gets operator's builtin options. NOTE that These options are tuned only for
-// imprinting method. Please modify them if use for other purposes.
+// last layer backprop method. Please modify them if use for other purposes.
 tflite::BuiltinOptionsUnion GetOpBuiltinOptions(
     tflite::BuiltinOperator op_type,
     const std::vector<internal::TensorConfig>& tensor_configs) {
@@ -64,11 +64,17 @@ tflite::BuiltinOptionsUnion GetOpBuiltinOptions(
     case tflite::BuiltinOperator_CONV_2D: {
       auto conv2d_builtin_options = absl::make_unique<tflite::Conv2DOptionsT>();
       conv2d_builtin_options->padding = tflite::Padding_SAME;
-      // Using Conv2d with 1x1 kernel to simulate Fully connected layer.
       conv2d_builtin_options->stride_h = 1;
       conv2d_builtin_options->stride_w = 1;
       result.type = tflite::BuiltinOptions_Conv2DOptions;
       result.value = conv2d_builtin_options.release();
+      break;
+    }
+    case tflite::BuiltinOperator_FULLY_CONNECTED: {
+      auto fullyconnected_builtin_options =
+          absl::make_unique<tflite::FullyConnectedOptionsT>();
+      result.type = tflite::BuiltinOptions_FullyConnectedOptions;
+      result.value = fullyconnected_builtin_options.release();
       break;
     }
     case tflite::BuiltinOperator_RESHAPE: {
@@ -153,11 +159,12 @@ EdgeTpuApiStatus ValidateOperatorInputs(
 
   switch (op_type) {
     case tflite::BuiltinOperator_CONV_2D:
+    case tflite::BuiltinOperator_FULLY_CONNECTED:
       EDGETPU_API_REPORT_ERROR(
           reporter, tensor_configs.size() != 3,
-          absl::Substitute(
-              "Conv operator must have three input tensors. Actual: $0",
-              tensor_configs.size()));
+          absl::Substitute("Conv, FullyConnected operator must have three "
+                           "input tensors. Actual: $0",
+                           tensor_configs.size()));
       break;
     case tflite::BuiltinOperator_L2_NORMALIZATION:
     case tflite::BuiltinOperator_RESHAPE:
@@ -178,10 +185,10 @@ EdgeTpuApiStatus ValidateOperatorInputs(
   return kEdgeTpuApiOk;
 }
 
-// Calculates quantization parameters for Conv2d operator.
+// Calculates quantization parameters for Conv2d / FullyConnected operator.
 // Returns quantization parameters for kernel, bias, and output tensor.
 std::vector<std::unique_ptr<tflite::QuantizationParametersT>>
-CalculateQuantParamsForConv2d(
+CalculateQuantParamsLinearLayer(
     const float* weights, int weights_size, const float* biases,
     int biases_size, const tflite::QuantizationParametersT& input_tensor_quant,
     float out_tensor_min, float out_tensor_max) {
@@ -280,7 +287,7 @@ EdgeTpuApiStatus AppendL2Norm(tflite::ModelT* model_t, int* new_op_index,
                         new_op_index, reporter);
 }
 
-EdgeTpuApiStatus AppendFullyConnectedLayer(
+EdgeTpuApiStatus AppendLinearLayer(
     const std::vector<int>& kernel_shape,
     std::vector<std::unique_ptr<tflite::QuantizationParametersT>> quant_params,
     tflite::ModelT* model_t, int* new_op_index,
@@ -288,30 +295,35 @@ EdgeTpuApiStatus AppendFullyConnectedLayer(
   EDGETPU_API_ENSURE_STATUS(ValidateClassificationModel(model_t, reporter));
 
   CHECK_EQ(quant_params.size(), 3);
-  auto conv2d_kernel_quant = std::move(quant_params[0]);
-  auto conv2d_bias_quant = std::move(quant_params[1]);
-  auto conv2d_output_quant = std::move(quant_params[2]);
+  auto kernel_quant = std::move(quant_params[0]);
+  auto bias_quant = std::move(quant_params[1]);
+  auto output_quant = std::move(quant_params[2]);
 
   std::vector<TensorConfig> tensor_configs;
   std::vector<int> bias_shape = {kernel_shape[0]};
   const auto& output_tensors = GetGraphOutputTensors(model_t);
   const tflite::TensorT* current_output_tensor = output_tensors[0];
-  std::vector<int> output_shape =
-      CalculateConv2dOutputShape(current_output_tensor->shape, kernel_shape);
+  std::vector<int> output_shape = CalculateLinearLayerOutputShape(
+      current_output_tensor->shape, kernel_shape);
   tensor_configs.push_back({"Appended/FC/Weights", tflite::TensorType_UINT8,
                             TensorLocation::kParameter, kernel_shape,
-                            conv2d_kernel_quant.release()});
+                            kernel_quant.release()});
 
   tensor_configs.push_back({"Appended/FC/Bias", tflite::TensorType_INT32,
                             TensorLocation::kParameter, bias_shape,
-                            conv2d_bias_quant.release()});
+                            bias_quant.release()});
 
   tensor_configs.push_back({"Appended/FC/Output", tflite::TensorType_UINT8,
                             TensorLocation::kOutput, output_shape,
-                            conv2d_output_quant.release()});
-
-  return AppendOperator(tensor_configs, tflite::BuiltinOperator_CONV_2D,
-                        model_t, new_op_index, reporter);
+                            output_quant.release()});
+  if (kernel_shape.size() == 2) {
+    return AppendOperator(tensor_configs,
+                          tflite::BuiltinOperator_FULLY_CONNECTED, model_t,
+                          new_op_index, reporter);
+  } else {
+    return AppendOperator(tensor_configs, tflite::BuiltinOperator_CONV_2D,
+                          model_t, new_op_index, reporter);
+  }
 }
 
 EdgeTpuApiStatus AppendReshape(tflite::ModelT* model_t, int* new_op_index,
@@ -440,7 +452,7 @@ EdgeTpuApiStatus AppendOperator(const std::vector<TensorConfig>& tensor_configs,
   return kEdgeTpuApiOk;
 }
 
-void SetConv2dParams(const std::vector<uint8_t>& kernel,
+void SetLinearParams(const std::vector<uint8_t>& kernel,
                      const std::vector<int32_t>& bias, int op_index,
                      tflite::ModelT* model_t) {
   CHECK(model_t);
@@ -474,7 +486,7 @@ void SetConv2dParams(const std::vector<uint8_t>& kernel,
   }
 }
 
-std::vector<int> CalculateConv2dOutputShape(
+std::vector<int> CalculateLinearLayerOutputShape(
     const std::vector<int>& input_shape, const std::vector<int>& kernel_shape) {
   std::vector<int> output_shape;
   for (auto it = input_shape.begin(); it != input_shape.end() - 1; ++it) {
@@ -597,8 +609,8 @@ std::unique_ptr<flatbuffers::FlatBufferBuilder> GetFlatBufferBuilder(
 
 EdgeTpuApiStatus AppendFullyConnectedAndSoftmaxLayerToModel(
     const std::string& in_model_path, const std::string& out_model_path,
-    const float* weights, int weights_size, const float* biases,
-    int biases_size, float out_tensor_min, float out_tensor_max,
+    const float* weights, size_t weights_size, const float* biases,
+    size_t biases_size, float out_tensor_min, float out_tensor_max,
     EdgeTpuErrorReporter* reporter) {
   // Read input model.
   std::string input_model_content;
@@ -613,14 +625,12 @@ EdgeTpuApiStatus AppendFullyConnectedAndSoftmaxLayerToModel(
   std::vector<tflite::TensorT*> graph_output_tensors =
       GetGraphOutputTensors(model_t.get());
   auto* embedding_output_tensor = graph_output_tensors[0];
-  VLOG(1) << absl::Substitute(
-      "Embedding vector dim: ($0, $1, $2, $3).",
-      embedding_output_tensor->shape[0], embedding_output_tensor->shape[1],
-      embedding_output_tensor->shape[2], embedding_output_tensor->shape[3]);
-  auto embedding_vector_dim = embedding_output_tensor->shape[3];
+  auto output_tensor_shape = embedding_output_tensor->shape;
+
+  auto embedding_vector_dim = *(output_tensor_shape.end() - 1);
 
   // Get quantization parameter for weights, biases and output tensor of FC.
-  auto quant_params = CalculateQuantParamsForConv2d(
+  auto quant_params = CalculateQuantParamsLinearLayer(
       weights, weights_size, biases, biases_size,
       *(embedding_output_tensor->quantization), out_tensor_min, out_tensor_max);
 
@@ -634,17 +644,22 @@ EdgeTpuApiStatus AppendFullyConnectedAndSoftmaxLayerToModel(
 
   // Append operators.
   int fc_op_index, reshape_op_index, softmax_op_index;
-  EDGETPU_API_ENSURE_STATUS(internal::AppendFullyConnectedLayer(
-      /*kernel_shape=*/{weights_size / embedding_vector_dim, 1, 1,
+
+  EDGETPU_API_ENSURE_STATUS(internal::AppendLinearLayer(
+      /*kernel_shape=*/{static_cast<int>(weights_size) / embedding_vector_dim,
                         embedding_vector_dim},
       std::move(quant_params), model_t.get(), &fc_op_index, reporter));
-  EDGETPU_API_ENSURE_STATUS(
-      internal::AppendReshape(model_t.get(), &reshape_op_index, reporter));
+
+  if (output_tensor_shape.size() == 4) {
+    EDGETPU_API_ENSURE_STATUS(
+        internal::AppendReshape(model_t.get(), &reshape_op_index, reporter));
+  }
+
   EDGETPU_API_ENSURE_STATUS(
       internal::AppendSoftmax(model_t.get(), &softmax_op_index, reporter));
 
   // Fill weights.
-  internal::SetConv2dParams(weights_quant, biases_quant, fc_op_index,
+  internal::SetLinearParams(weights_quant, biases_quant, fc_op_index,
                             model_t.get());
 
   // Convert from tflite::ModelT format to FlatBufferBuilder.

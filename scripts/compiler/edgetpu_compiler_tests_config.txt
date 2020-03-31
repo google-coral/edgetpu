@@ -1,0 +1,5 @@
+out/{arch}/tests/src/cpp/basic/embedding_extractor_models_test --test_data_dir={test_data}
+out/{arch}/tests/src/cpp/basic/segmentation_models_test --test_data_dir={test_data}
+out/{arch}/tests/src/cpp/classification/models_test --test_data_dir={test_data} --test_case_csv=classification_test_cases.csv
+out/{arch}/tests/src/cpp/detection/models_test --test_data_dir={test_data}
+out/{arch}/tests/src/cpp/pipeline/models_test --model_names={pipeline_model_names} --test_data_dir={test_data}

@@ -17,7 +17,7 @@ models.
 
 For more information about how to use this API and how to create the type of model required, see
 `Retrain a classification model on-device with weight imprinting
-<https://coral.withgoogle.com/docs/edgetpu/retrain-classification-ondevice/>`_.
+<https://coral.ai/docs/edgetpu/retrain-classification-ondevice/>`_.
 
 .. note::
 
@@ -27,7 +27,7 @@ For more information about how to use this API and how to create the type of mod
 
   +   Most importantly, the input model has new architecture requirements. For details,
       read `Retrain a classification model on-device with weight imprinting
-      <https://coral.withgoogle.com/docs/edgetpu/retrain-classification-ondevice/>`_.
+      <https://coral.ai/docs/edgetpu/retrain-classification-ondevice/>`_.
   +   The initialization function accepts a new ``keep_classes`` boolean to indicate whether you
       want to keep the pre-trained classes from the provided model.
   +   :func:`~ImprintingEngine.train` now requires a second argument for the class ID you want to
@@ -57,7 +57,7 @@ class ImprintingEngine(object):
       model_path (str): Path to the model you want to retrain. This model must be a ``.tflite``
         file output by the ``join_tflite_models`` tool. For more information about how to create a
         compatible model, read `Retrain an image classification model on-device
-        <https://coral.withgoogle.com/docs/edgetpu/retrain-classification-ondevice/>`_.
+        <https://coral.ai/docs/edgetpu/retrain-classification-ondevice/>`_.
       keep_classes (bool): If True, keep the existing classes from the pre-trained model (and use
         training to add additional classes). If False, drop the existing classes and train the model
         to include new classes only.

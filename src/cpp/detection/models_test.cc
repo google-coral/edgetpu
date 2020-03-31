@@ -15,18 +15,18 @@ TEST(DetectionEngineTest, TestSSDModelsWithCat) {
   // 3: detected score;
   // 4: number of detected objects;
   TestCatMsCocoDetection(
-      TestDataPath("mobilenet_ssd_v1_coco_quant_postprocess.tflite"),
+      TestDataPath("ssd_mobilenet_v1_coco_quant_postprocess.tflite"),
       /*score_threshold=*/0.79, /*iou_threshold=*/0.8);
   TestCatMsCocoDetection(
-      TestDataPath("mobilenet_ssd_v1_coco_quant_postprocess_edgetpu.tflite"),
+      TestDataPath("ssd_mobilenet_v1_coco_quant_postprocess_edgetpu.tflite"),
       /*score_threshold=*/0.79, /*iou_threshold=*/0.8);
 
   // Mobilenet V2 SSD
   TestCatMsCocoDetection(
-      TestDataPath("mobilenet_ssd_v2_coco_quant_postprocess.tflite"),
+      TestDataPath("ssd_mobilenet_v2_coco_quant_postprocess.tflite"),
       /*score_threshold=*/0.95, /*iou_threshold=*/0.86);
   TestCatMsCocoDetection(
-      TestDataPath("mobilenet_ssd_v2_coco_quant_postprocess_edgetpu.tflite"),
+      TestDataPath("ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite"),
       /*score_threshold=*/0.96, /*iou_threshold=*/0.86);
 }
 
@@ -38,10 +38,24 @@ void TestFaceDetection(const std::string& model_name, float score_threshold,
 }
 
 TEST(DetectionEngineTest, TestFaceModel) {
-  TestFaceDetection("mobilenet_ssd_v2_face_quant_postprocess.tflite", 0.7,
+  TestFaceDetection("ssd_mobilenet_v2_face_quant_postprocess.tflite", 0.7,
                     0.65);
-  TestFaceDetection("mobilenet_ssd_v2_face_quant_postprocess_edgetpu.tflite",
+  TestFaceDetection("ssd_mobilenet_v2_face_quant_postprocess_edgetpu.tflite",
                     0.7, 0.65);
+}
+
+TEST(DetectionEngineTest, TestFineTunedPetModel) {
+  TestDetection(TestDataPath("ssd_mobilenet_v1_fine_tuned_pet.tflite"),
+                TestDataPath("cat.bmp"),
+                /*expected_box=*/{0.35, 0.11, 0.7, 0.66},
+                /*expected_label=*/0, /*score_threshold=*/0.9,
+                /*iou_threshold=*/0.81);
+
+  TestDetection(TestDataPath("ssd_mobilenet_v1_fine_tuned_pet_edgetpu.tflite"),
+                TestDataPath("cat.bmp"),
+                /*expected_box=*/{0.35, 0.11, 0.7, 0.66},
+                /*expected_label=*/0, /*score_threshold=*/0.9,
+                /*iou_threshold=*/0.81);
 }
 
 }  // namespace

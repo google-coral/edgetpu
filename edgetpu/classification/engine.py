@@ -32,12 +32,12 @@ class ClassificationEngine(BasicEngine):
     Args:
       model_path (str): Path to a TensorFlow Lite (``.tflite``) file.
         This model must be `compiled for the Edge TPU
-        <https://coral.withgoogle.com/docs/edgetpu/compiler/>`_; otherwise, it simply executes
+        <https://coral.ai/docs/edgetpu/compiler/>`_; otherwise, it simply executes
         on the host CPU.
       device_path (str): The device path for the Edge TPU this engine should use. This argument
         is needed only when you have multiple Edge TPUs and more inference engines than
         available Edge TPUs. For details, read `how to use multiple Edge TPUs
-        <https://coral.withgoogle.com/docs/edgetpu/multiple-edgetpu/>`_.
+        <https://coral.ai/docs/edgetpu/multiple-edgetpu/>`_.
 
     Raises:
       ValueError: If the model's output tensor size is not 1.
@@ -75,16 +75,26 @@ class ClassificationEngine(BasicEngine):
 
     Raises:
       RuntimeError: If the model's input tensor shape doesn't match the shape expected for an
-        image classification model, which is [1, height, width, 3].
+        object detection model, which is [1, height, width, channel].
+      ValueError: If the input tensor channel is not 1 (grayscale) or 3 (RGB)
       ValueError: If argument values are invalid.
     """
     input_tensor_shape = self.get_input_tensor_shape()
-    if (input_tensor_shape.size != 4 or input_tensor_shape[3] != 3 or
+    if (input_tensor_shape.size != 4 or
         input_tensor_shape[0] != 1):
       raise RuntimeError(
-          'Invalid input tensor shape! Expected: [1, height, width, 3]')
-    _, height, width, _ = input_tensor_shape
+          'Invalid input tensor shape! Expected: [1, height, width, channel]')
+    _, height, width, channel = input_tensor_shape
     img = img.resize((width, height), resample)
+    # Handle color space conversion.
+    if channel == 1:
+      img = img.convert('L')
+    elif channel == 3:
+      img = img.convert('RGB')
+    else:
+      raise ValueError(
+          'Invalid input tensor channel! Expected: 1 or 3. Actual: %d' % channel)
+
     input_tensor = numpy.asarray(img).flatten()
     return self.classify_with_input_tensor(input_tensor, threshold, top_k)
 

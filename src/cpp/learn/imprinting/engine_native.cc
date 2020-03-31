@@ -188,7 +188,7 @@ EdgeTpuApiStatus ImprintingEngineNative::PostprocessImprintingModel() {
   const int reshape_tensor_index = reshape_op->outputs[0];
 
   auto& reshape_tensor = tensors[reshape_tensor_index];
-  *(reshape_tensor->shape.end() - 1) = new_num_classes;
+  reshape_tensor->shape.back() = new_num_classes;
 
   // There can be two types of reshape op for tflite.
   // - If there is a second input tensor, it indicates the reshape's shape.
@@ -204,7 +204,7 @@ EdgeTpuApiStatus ImprintingEngineNative::PostprocessImprintingModel() {
   auto* reshape_option_t = reinterpret_cast<tflite::ReshapeOptionsT*>(
       reshape_op->builtin_options.value);
   auto& new_shape = reshape_option_t->new_shape;
-  *(new_shape.end() - 1) = new_num_classes;
+  new_shape.back() = new_num_classes;
 
   reshape_tensor->quantization =
       CreateQuantParam(/*min=*/{-scale_factor}, /*max=*/{scale_factor},
@@ -288,7 +288,7 @@ EdgeTpuApiStatus ImprintingEngineNative::Init(const std::string& model_path,
   EDGETPU_API_REPORT_ERROR(error_reporter_,
                            builder(&embedding_extractor_) == kEdgeTpuApiError,
                            builder.get_error_message());
-  int output_tensor_num;
+  size_t output_tensor_num;
 
   EDGETPU_API_REPORT_ERROR(error_reporter_,
                            embedding_extractor_->get_num_of_output_tensors(
@@ -296,7 +296,7 @@ EdgeTpuApiStatus ImprintingEngineNative::Init(const std::string& model_path,
                            embedding_extractor_->get_error_message());
   EDGETPU_API_REPORT_ERROR(error_reporter_, output_tensor_num < 1,
                            "output tensor number of embedding extractor < 1!");
-  int tensor_size;
+  size_t tensor_size;
 
   EDGETPU_API_REPORT_ERROR(error_reporter_,
                            embedding_extractor_->get_output_tensor_size(
@@ -309,8 +309,9 @@ EdgeTpuApiStatus ImprintingEngineNative::Init(const std::string& model_path,
   return kEdgeTpuApiOk;
 }
 
-EdgeTpuApiStatus ImprintingEngineNative::Train(const uint8_t* input, int dim1,
-                                               int dim2, const int class_id) {
+EdgeTpuApiStatus ImprintingEngineNative::Train(const uint8_t* input,
+                                               size_t dim1, size_t dim2,
+                                               const int class_id) {
   IMPRINTING_ENGINE_NATIVE_INIT_CHECK();
   EDGETPU_API_REPORT_ERROR(
       error_reporter_, weights_.size() % embedding_vector_dim_ != 0,
@@ -358,7 +359,7 @@ EdgeTpuApiStatus ImprintingEngineNative::Train(const uint8_t* input, int dim1,
 
   for (int i = 0; i < num_images; ++i) {
     float const* result;
-    int result_size;
+    size_t result_size;
     EDGETPU_API_REPORT_ERROR(
         error_reporter_,
         embedding_extractor_->RunInference(input + i * dim2, dim2, &result,
@@ -426,8 +427,8 @@ EdgeTpuApiStatus ImprintingEngineNative::SaveModel(
 }
 
 EdgeTpuApiStatus ImprintingEngineNative::RunInference(
-    const uint8_t* const input, const int in_size, float const** const output,
-    int* const out_size) {
+    const uint8_t* const input, size_t in_size, float const** const output,
+    size_t* const out_size) {
   const auto& start_time = std::chrono::steady_clock::now();
 
   if (needs_postprocess_) {
@@ -455,7 +456,7 @@ EdgeTpuApiStatus ImprintingEngineNative::RunInference(
   }
 
   float const* result;
-  int result_size;
+  size_t result_size;
   EDGETPU_API_REPORT_ERROR(
       error_reporter_,
       classification_model_->RunInference(input, in_size, &result,
@@ -464,10 +465,10 @@ EdgeTpuApiStatus ImprintingEngineNative::RunInference(
   EDGETPU_API_REPORT_ERROR(
       error_reporter_, result_size != num_classes_,
       "Unexpected inference result size of classification model!");
-  (*out_size) = num_classes_;
+  *out_size = num_classes_;
   inference_result_.resize(num_classes_);
   std::memcpy(&inference_result_[0], result, sizeof(float) * num_classes_);
-  (*output) = inference_result_.data();
+  *output = inference_result_.data();
 
   std::chrono::duration<double, std::milli> time_span =
       std::chrono::steady_clock::now() - start_time;
@@ -478,14 +479,14 @@ EdgeTpuApiStatus ImprintingEngineNative::RunInference(
 
 EdgeTpuApiStatus ImprintingEngineNative::get_inference_time(
     float* const time) const {
-  (*time) = inference_time_;
+  *time = inference_time_;
   return kEdgeTpuApiOk;
 }
 
 EdgeTpuApiStatus ImprintingEngineNative::get_metadata(
     std::map<int, float>* metadata) {
   IMPRINTING_ENGINE_NATIVE_INIT_CHECK();
-  (*metadata) = metadata_;
+  *metadata = metadata_;
   return kEdgeTpuApiOk;
 }
 
@@ -508,7 +509,7 @@ EdgeTpuApiStatus ImprintingEngineNativeBuilder::operator()(
   EDGETPU_API_REPORT_ERROR(
       error_reporter_, !engine,
       "Null output pointer passed to ImprintingEngineNativeBuilder!");
-  (*engine) = absl::make_unique<ImprintingEngineNative>();
+  *engine = absl::make_unique<ImprintingEngineNative>();
   EDGETPU_API_REPORT_ERROR(
       error_reporter_,
       (*engine)->Init(model_path_, keep_classes_) == kEdgeTpuApiError,

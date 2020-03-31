@@ -10,6 +10,7 @@
 
 #include "edgetpu.h"
 #include "src/cpp/examples/model_utils.h"
+#include "src/cpp/test_utils.h"
 #include "tensorflow/lite/interpreter.h"
 #include "tensorflow/lite/model.h"
 
@@ -105,9 +106,11 @@ int main(int argc, char* argv[]) {
 
   // Modify the following accordingly to try different models and images.
   const std::string model_path =
-      argc == 3 ? argv[1] : "/tmp/mobilenet_v1_1.0_224_quant_edgetpu.tflite";
+      argc == 3 ? argv[1]
+                : coral::GetTempPrefix() +
+                      "/mobilenet_v1_1.0_224_quant_edgetpu.tflite";
   const std::string resized_image_path =
-      argc == 3 ? argv[2] : "/tmp/resized_cat.bmp";
+      argc == 3 ? argv[2] : coral::GetTempPrefix() + "/resized_cat.bmp";
 
   // Read model.
   std::unique_ptr<tflite::FlatBufferModel> model =

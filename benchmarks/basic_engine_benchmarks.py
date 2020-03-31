@@ -33,53 +33,37 @@ import numpy as np
 import test_utils
 
 
-def _run_benchmark_for_model(model_name):
-  """Runs benchmark for given model with a random input.
+def run_benchmark(model):
+  """Returns average inference time in ms on specified model on random input."""
 
-  Args:
-    model_name: string, file name of the model.
+  print('Benchmark for [%s]' % model)
+  print('model path = %s' % test_utils.test_data_path(model))
+  engine = BasicEngine(test_utils.test_data_path(model))
+  print('input tensor shape = %s' % engine.get_input_tensor_shape())
 
-  Returns:
-    float, average inference time.
-  """
-  iterations = 200 if ('edgetpu' in model_name) else 20
-  print('Benchmark for [', model_name, ']')
-  print('model path = ', test_utils.test_data_path(model_name))
-  engine = BasicEngine(test_utils.test_data_path(model_name))
-  print('Shape of input tensor : ', engine.get_input_tensor_shape())
-
-  # Prepare a random generated input.
+  iterations = 200 if 'edgetpu' in model else 20
   input_size = engine.required_input_array_size()
   random_input = test_utils.generate_random_input(1, input_size)
-
-  # Convert it to a numpy.array.
   input_data = np.array(random_input, dtype=np.uint8)
-
-  benchmark_time = timeit.timeit(
+  result = 1000 * timeit.timeit(
       lambda: engine.run_inference(input_data),
-      number=iterations)
+      number=iterations) / iterations
 
-  # Time consumed for each iteration (milliseconds).
-  time_per_inference = (benchmark_time / iterations) * 1000
-  print(time_per_inference, 'ms (iterations = ', iterations, ')')
-  return time_per_inference
+  print('%.2f ms (iterations = %d)' % (result, iterations))
+  return result
 
 
 if __name__ == '__main__':
   args = test_utils.parse_args()
   machine = test_utils.machine_info()
   test_utils.check_cpu_scaling_governor_status()
-  # Read references from csv file.
-  model_list, reference = test_utils.read_reference(
+  models, reference = test_utils.read_reference(
       'basic_engine_reference_%s.csv' % machine)
-  total_models = len(model_list)
-  # Put column names in first row.
   results = [('MODEL', 'INFERENCE_TIME')]
-  for cnt, model in enumerate(model_list, start=1):
-    print('-------------- Model ', cnt, '/', total_models, ' ---------------')
-    results.append((model, _run_benchmark_for_model(model)))
-  test_utils.save_as_csv(
-      'basic_engine_benchmarks_%s_%s.csv' % (
-          machine, time.strftime('%Y%m%d-%H%M%S')),
-      results)
+  for i, model in enumerate(models, start=1):
+    print('-------------- Model %d / %d ---------------' % (i, len(models)))
+    results.append((model, run_benchmark(model)))
+  test_utils.save_as_csv('basic_engine_benchmarks_%s_%s.csv' %
+                             (machine, time.strftime('%Y%m%d-%H%M%S')),
+                         results)
   test_utils.check_result(reference, results, args.enable_assertion)

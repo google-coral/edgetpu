@@ -15,17 +15,21 @@
 """Demo to show running two models on one/two Edge TPU devices.
 
 This is a dummy example that compares running two different models using one
-Edge TPU vs two Edge TPUs. It runs each model `num_inferences` inferences on a
-fixed image and then report the time used with one and two Edge TPU devices.
+Edge TPU vs two Edge TPUs. It requires that your system includes two Edge TPU
+devices.
 
-It assumes that the first model is a classification model and the second model
-is a detection model.
+You give the script one classification model and one
+detection model, and it runs each model the number of times specified with the
+`num_inferences` argument, using the same image. It then reports the time
+spent using either one or two Edge TPU devices.
 
-Note: Running two models alternatively with one Edge TPU is cache unfriendly, as
-one model continuously kicks off the other model off the device's cache. In this
-case, running several inferences with one model in a batch before switching to
-another model can help to some extend. But using two Edge TPUs with two threads
-can help more.
+Note: Running two models alternatively with one Edge TPU is cache unfriendly,
+as each model continuously kicks the other model off the device's cache when
+they each run. In this case, running several inferences with one model in a
+batch before switching to another model can help to some extent. It's also
+possible to co-compile both models so they can be cached simultaneously
+(if they fit; read more at coral.ai/docs/edgetpu/compiler/). But using two
+Edge TPUs with two threads can help more.
 """
 
 import argparse

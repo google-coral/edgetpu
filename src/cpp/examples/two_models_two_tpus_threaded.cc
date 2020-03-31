@@ -39,16 +39,20 @@ int main(int argc, char* argv[]) {
 
   // Modify the following accordingly to try different models.
   const std::string bird_model_path =
-      argc == 5 ? argv[1] : "/tmp/edgetpu_cpp_example/inat_bird_edgetpu.tflite";
+      argc == 5 ? argv[1]
+                : coral::GetTempPrefix() +
+                      "/edgetpu_cpp_example/inat_bird_edgetpu.tflite";
   const std::string plant_model_path =
       argc == 5 ? argv[2]
-                : "/tmp/edgetpu_cpp_example/inat_plant_edgetpu.tflite";
+                : coral::GetTempPrefix() +
+                      "/edgetpu_cpp_example/inat_plant_edgetpu.tflite";
   const std::string bird_image_path =
-      argc == 5 ? argv[3] : "/tmp/edgetpu_cpp_example/bird.bmp";
+      argc == 5 ? argv[3]
+                : coral::GetTempPrefix() + "/edgetpu_cpp_example/bird.bmp";
   const std::string plant_image_path =
-      argc == 5 ? argv[4] : "/tmp/edgetpu_cpp_example/plant.bmp";
+      argc == 5 ? argv[4]
+                : coral::GetTempPrefix() + "/edgetpu_cpp_example/plant.bmp";
 
-  // Modify the follow according to try different models.
   const int num_inferences = 2000;
 
   const auto& available_tpus =
@@ -59,8 +63,9 @@ int main(int argc, char* argv[]) {
   }
 
   auto thread_job =
-      [](const edgetpu::EdgeTpuManager::DeviceEnumerationRecord& tpu,
-         const std::string& model_path, const std::string& image_path) {
+      [num_inferences]  // NOLINT(clang-diagnostic-unused-lambda-capture)
+      (const edgetpu::EdgeTpuManager::DeviceEnumerationRecord& tpu,
+       const std::string& model_path, const std::string& image_path) {
         const auto& tid = std::this_thread::get_id();
         std::cout << "Thread: " << tid << " Using model: " << model_path
                   << " Running " << num_inferences << " inferences."

@@ -39,7 +39,7 @@ TEST(ClassificationEngineTest, TestDebugFunctions) {
   ASSERT_EQ(4, input_tensor_shape.size());
   EXPECT_THAT(input_tensor_shape, ElementsAre(1, 224, 224, 3));
   // Check output tensors.
-  std::vector<int> output_tensor_sizes =
+  std::vector<size_t> output_tensor_sizes =
       mobilenet_engine.get_all_output_tensors_sizes();
   ASSERT_EQ(1, output_tensor_sizes.size());
   EXPECT_EQ(1001, output_tensor_sizes[0]);

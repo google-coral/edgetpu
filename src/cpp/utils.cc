@@ -62,7 +62,8 @@ EdgeTpuApiStatus WriteFile(const std::string& file_content,
 void ReadFileOrDie(const std::string& file_path, std::string* file_content) {
   CHECK(file_content);
   EdgeTpuErrorReporter reporter;
-  CHECK_EQ(ReadFile(file_path, file_content, &reporter), kEdgeTpuApiOk);
+  CHECK_EQ(ReadFile(file_path, file_content, &reporter), kEdgeTpuApiOk)
+      << "Unable to open file: " << file_path;
 }
 
 void WriteFileOrDie(const std::string& file_content,

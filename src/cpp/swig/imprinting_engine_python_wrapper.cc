@@ -51,22 +51,23 @@ PyObject* ImprintingEnginePythonWrapper::SaveModel(
   Py_RETURN_NONE;
 }
 
-PyObject* ImprintingEnginePythonWrapper::Train(const uint8_t* input, int dim1,
-                                               int dim2, int class_id) {
+PyObject* ImprintingEnginePythonWrapper::Train(const uint8_t* input,
+                                               size_t dim1, size_t dim2,
+                                               int class_id) {
   ENSURE_ENGINE_INIT();
   ENSURE_ENGINE_STATUS(engine_->Train(input, dim1, dim2, class_id));
   Py_RETURN_NONE;
 }
 
 PyObject* ImprintingEnginePythonWrapper::RunInference(const uint8_t* input,
-                                                      int in_size) {
+                                                      size_t in_size) {
   ENSURE_ENGINE_INIT();
   float const* output;
-  int out_size;
+  size_t out_size;
   ENSURE_ENGINE_STATUS(
       engine_->RunInference(input, in_size, &output, &out_size));
   // Parse results.
-  npy_intp dims[1] = {out_size};
+  npy_intp dims[1] = {static_cast<npy_intp>(out_size)};
   return PyArray_SimpleNewFromData(1, dims, NPY_FLOAT, (void*)(output));
 }
 

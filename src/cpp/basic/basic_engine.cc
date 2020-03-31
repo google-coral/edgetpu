@@ -39,13 +39,13 @@ std::vector<int> BasicEngine::get_input_tensor_shape() const {
   return std::vector<int>(dims, dims + dims_num);
 }
 
-std::vector<int> BasicEngine::get_all_output_tensors_sizes() const {
-  int const* tensor_sizes;
-  int tensor_num;
+std::vector<size_t> BasicEngine::get_all_output_tensors_sizes() const {
+  size_t const* tensor_sizes;
+  size_t tensor_num;
   LOG_IF(FATAL, engine_->get_all_output_tensors_sizes(
                     &tensor_sizes, &tensor_num) == kEdgeTpuApiError)
       << engine_->get_error_message();
-  return std::vector<int>(tensor_sizes, tensor_sizes + tensor_num);
+  return std::vector<size_t>(tensor_sizes, tensor_sizes + tensor_num);
 }
 
 // Gets the path of the model.
@@ -63,20 +63,21 @@ std::string BasicEngine::device_path() const {
   return path;
 }
 
+template <typename T>
 std::vector<std::vector<float>> BasicEngine::RunInference(
-    const std::vector<uint8_t>& input) {
+    const std::vector<T>& input) {
   float const* tmp_result;
-  int tmp_result_size;
+  size_t tmp_result_size;
   LOG_IF(FATAL, engine_->RunInference(input.data(), input.size(), &tmp_result,
                                       &tmp_result_size) == kEdgeTpuApiError)
       << engine_->get_error_message();
 
   // Parse 1d result vector into output tensors.
-  std::vector<int> output_tensor_shape = get_all_output_tensors_sizes();
+  std::vector<size_t> output_tensor_shape = get_all_output_tensors_sizes();
   std::vector<std::vector<float>> results(output_tensor_shape.size());
   int offset = 0;
   for (int i = 0; i < output_tensor_shape.size(); ++i) {
-    int size_of_output_tensor_i = output_tensor_shape[i];
+    const size_t size_of_output_tensor_i = output_tensor_shape[i];
     results[i].resize(size_of_output_tensor_i);
     std::memcpy(results[i].data(), tmp_result + offset,
                 sizeof(float) * size_of_output_tensor_i);
@@ -87,6 +88,12 @@ std::vector<std::vector<float>> BasicEngine::RunInference(
                                       "between offset and output array size.";
   return results;
 }
+
+// Explicit instantiation.
+template std::vector<std::vector<float>> BasicEngine::RunInference(
+    const std::vector<uint8_t>&);
+template std::vector<std::vector<float>> BasicEngine::RunInference(
+    const std::vector<float>&);
 
 // Gets time consumed for last inference (milliseconds).
 float BasicEngine::get_inference_time() const {

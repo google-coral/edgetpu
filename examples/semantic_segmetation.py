@@ -11,16 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-r"""A demo for semantic segmentation.
+r"""An example using `BasicEngine` to perform semantic segmentation.
 
-Example (Running under edgetpu repo's root directory):
+The following command runs this script and saves a new image showing the
+segmented pixels at the location specified by `output`:
 
-  python3 examples/semantic_segmentation.py \
-  --model='test_data/deeplabv3_mnv2_pascal_quant_edgetpu.tflite' \
-  --input='test_data/bird.bmp' \
-  --keep_aspect_ratio
-
-'--output' is an optional flag to specify file name of output image.
+python3 examples/semantic_segmentation.py \
+--model models/deeplabv3_mnv2_pascal_quant_edgetpu.tflite \
+--input models/bird.bmp \
+--keep_aspect_ratio \
+--output ${HOME}/segmentation_result.jpg
 """
 
 import argparse

@@ -2,7 +2,6 @@
 #define EDGETPU_CPP_ERROR_REPORTER_H_
 
 #include <sstream>
-#include <stdexcept>
 #include <string>
 
 #include "tensorflow/lite/core/api/error_reporter.h"

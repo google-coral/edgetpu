@@ -1,3 +1,6 @@
+load("//src/cpp/basic:model_benchmark_cases.bzl", "MODEL_BENCHMARK_CASES")
+load("//src/cpp:model_benchmark.bzl", "generate_models_benchmark_src")
+
 package(
     default_visibility = ["//visibility:public"],
 )
@@ -35,7 +38,7 @@ cc_library(
     ],
     deps = [
         ":basic_engine_native",
-        "@com_google_glog//:glog",
+        "@glog",
     ],
 )
 
@@ -57,8 +60,8 @@ cc_test(
         "//src/cpp:test_utils",
         "@com_google_absl//absl/flags:parse",
         "@com_google_absl//absl/memory",
-        "@com_google_glog//:glog",
         "@com_google_googletest//:gtest",
+        "@glog",
     ],
 )
 
@@ -79,29 +82,48 @@ cc_test(
         "//src/cpp:fake_op",
         "//src/cpp:test_utils",
         "@com_google_absl//absl/flags:parse",
-        "@com_google_glog//:glog",
         "@com_google_googletest//:gtest",
+        "@glog",
     ],
 )
 
 cc_test(
-    name = "models_test",
+    name = "embedding_extractor_models_test",
     timeout = "long",
     srcs = [
-        "models_test.cc",
+        "embedding_extractor_models_test.cc",
     ],
     data = [
         "//test_data:images",
         "//test_data:models",
-        "//test_data/cocompilation:models",
     ],
     linkstatic = 1,
     deps = [
         ":basic_engine",
         "//src/cpp:test_utils",
         "@com_google_absl//absl/flags:parse",
-        "@com_google_glog//:glog",
         "@com_google_googletest//:gtest",
+        "@glog",
+    ],
+)
+
+cc_test(
+    name = "segmentation_models_test",
+    timeout = "long",
+    srcs = [
+        "segmentation_models_test.cc",
+    ],
+    data = [
+        "//test_data:images",
+        "//test_data:models",
+    ],
+    linkstatic = 1,
+    deps = [
+        ":basic_engine",
+        "//src/cpp:test_utils",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_googletest//:gtest",
+        "@glog",
     ],
 )
 
@@ -118,7 +140,7 @@ cc_library(
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
-        "@com_google_glog//:glog",
+        "@glog",
         "@libedgetpu//:header",
     ],
 )
@@ -132,19 +154,18 @@ cc_test(
     deps = [
         ":edgetpu_resource_manager",
         "@com_google_absl//absl/flags:parse",
-        "@com_google_glog//:glog",
         "@com_google_googletest//:gtest",
+        "@glog",
     ],
 )
 
 cc_binary(
-    name = "models_benchmark",
+    name = "cocompiled_models_benchmark",
     testonly = 1,
     srcs = [
-        "models_benchmark.cc",
+        "cocompiled_models_benchmark.cc",
     ],
     data = [
-        "//test_data:images",
         "//test_data:models",
         "//test_data/cocompilation:models",
     ],
@@ -153,7 +174,7 @@ cc_binary(
         "//src/cpp:test_utils",
         "@com_github_google_benchmark//:benchmark",
         "@com_google_absl//absl/flags:parse",
-        "@com_google_glog//:glog",
+        "@glog",
     ],
 )
 
@@ -172,8 +193,8 @@ cc_test(
         "//src/cpp:test_utils",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
-        "@com_google_glog//:glog",
         "@com_google_googletest//:gtest",
+        "@glog",
     ],
 )
 
@@ -192,8 +213,8 @@ cc_test(
         "//src/cpp:test_utils",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
-        "@com_google_glog//:glog",
         "@com_google_googletest//:gtest",
+        "@glog",
     ],
 )
 
@@ -211,8 +232,8 @@ cc_test(
         "//src/cpp:test_utils",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
-        "@com_google_glog//:glog",
         "@com_google_googletest//:gtest",
+        "@glog",
     ],
 )
 
@@ -227,7 +248,7 @@ cc_binary(
         ":edgetpu_resource_manager",
         "@com_github_google_benchmark//:benchmark",
         "@com_github_google_benchmark//:benchmark_main",
-        "@com_google_glog//:glog",
+        "@glog",
         "@libedgetpu//:header",
     ],
 )
@@ -247,7 +268,49 @@ cc_test(
         "//src/cpp/basic:basic_engine",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
-        "@com_google_glog//:glog",
         "@com_google_googletest//:gtest",
+        "@glog",
+    ],
+)
+
+cc_test(
+    name = "float_input_model_test",
+    timeout = "long",
+    srcs = [
+        "float_input_model_test.cc",
+    ],
+    data = [
+        "//test_data:images",
+        "//test_data:models",
+    ],
+    linkstatic = 1,
+    deps = [
+        ":basic_engine",
+        "//src/cpp:test_utils",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_googletest//:gtest",
+        "@glog",
+    ],
+)
+
+[generate_models_benchmark_src(
+    name = "%s_src" % case.get("benchmark_name").lower(),
+    benchmark_name = case.get("benchmark_name"),
+    tflite_cpu_filepath = case.get("tflite_cpu_filepath"),
+    tflite_edgetpu_filepath = case.get("tflite_edgetpu_filepath"),
+) for case in MODEL_BENCHMARK_CASES]
+
+cc_binary(
+    name = "models_benchmark",
+    testonly = 1,
+    srcs = [":%s_src" % case.get("benchmark_name").lower() for case in MODEL_BENCHMARK_CASES],
+    data = [
+        "//test_data:models",
+    ],
+    deps = [
+        "//src/cpp:benchmark_main",
+        "//src/cpp:test_utils",
+        "@com_github_google_benchmark//:benchmark",
+        "@glog",
     ],
 )

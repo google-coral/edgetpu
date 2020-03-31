@@ -18,16 +18,34 @@ set -x
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly MAKEFILE="${SCRIPT_DIR}/../Makefile"
+PYTHON_VERSIONS="35 36 37"
 
-for i in "$@"; do
-  if [[ "$i" == --clean ]]; then
-    make -f "${MAKEFILE}" clean
-  fi
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --clean)
+      make -f "${MAKEFILE}" clean
+      shift
+      ;;
+    --python_versions)
+      PYTHON_VERSIONS=$2
+      shift
+      shift
+      ;;
+    *)
+      shift
+      ;;
+  esac
 done
 
-# Python 3.5
-make DOCKER_IMAGE=ubuntu:16.04 DOCKER_TARGETS=swig -f "${MAKEFILE}" docker-build
-# Python 3.6
-make DOCKER_IMAGE=ubuntu:18.04 DOCKER_TARGETS=swig -f "${MAKEFILE}" docker-build
-# Python 3.7
-make DOCKER_IMAGE=debian:buster DOCKER_TARGETS=swig -f "${MAKEFILE}" docker-build
+function docker_image {
+  case $1 in
+    35) echo "ubuntu:16.04" ;;
+    36) echo "ubuntu:18.04" ;;
+    37) echo "debian:buster" ;;
+    *) echo "Unsupported python version: $1" 1>&2; exit 1 ;;
+  esac
+}
+
+for python_version in ${PYTHON_VERSIONS}; do
+  make DOCKER_IMAGE=$(docker_image "${python_version}") DOCKER_TARGETS=swig -f "${MAKEFILE}" docker-build
+done

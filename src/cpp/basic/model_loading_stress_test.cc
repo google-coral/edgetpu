@@ -16,8 +16,8 @@ TEST(ModelLoadingStressTest, AlternateEdgeTpuModels) {
   const std::vector<std::string> model_names = {
       "mobilenet_v1_1.0_224_quant_edgetpu.tflite",
       "mobilenet_v2_1.0_224_quant_edgetpu.tflite",
-      "mobilenet_ssd_v1_coco_quant_postprocess_edgetpu.tflite",
-      "mobilenet_ssd_v2_coco_quant_postprocess_edgetpu.tflite",
+      "ssd_mobilenet_v1_coco_quant_postprocess_edgetpu.tflite",
+      "ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite",
       "inception_v1_224_quant_edgetpu.tflite",
       "inception_v2_224_quant_edgetpu.tflite",
       "inception_v3_299_quant_edgetpu.tflite",
@@ -37,8 +37,8 @@ TEST(ModelLoadingStressTest, AlternateCpuModels) {
   const std::vector<std::string> model_names = {
       "mobilenet_v1_1.0_224_quant.tflite",
       "mobilenet_v2_1.0_224_quant.tflite",
-      "mobilenet_ssd_v1_coco_quant_postprocess.tflite",
-      "mobilenet_ssd_v2_coco_quant_postprocess.tflite",
+      "ssd_mobilenet_v1_coco_quant_postprocess.tflite",
+      "ssd_mobilenet_v2_coco_quant_postprocess.tflite",
       "inception_v1_224_quant.tflite",
       "inception_v2_224_quant.tflite",
       "inception_v3_299_quant.tflite",

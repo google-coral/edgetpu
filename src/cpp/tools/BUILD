@@ -8,7 +8,7 @@ cc_library(
     hdrs = ["tflite_graph_util.h"],
     deps = [
         "//src/cpp:utils",
-        "@com_google_glog//:glog",
+        "@glog",
         "@org_tensorflow//tensorflow/lite/schema:schema_fbs",
     ],
 )
@@ -20,6 +20,7 @@ cc_binary(
         ":tflite_graph_util",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/strings",
     ],
 )
 
@@ -34,8 +35,8 @@ cc_test(
         ":tflite_graph_util",
         "//src/cpp:test_utils",
         "@com_google_absl//absl/flags:parse",
-        "@com_google_glog//:glog",
         "@com_google_googletest//:gtest",
+        "@glog",
     ],
 )
 
@@ -52,6 +53,24 @@ cc_binary(
         "//src/cpp/basic:basic_engine",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
-        "@com_google_glog//:glog",
+        "@glog",
+    ],
+)
+
+cc_binary(
+    name = "model_pipelining_performance_analysis",
+    testonly = 1,
+    srcs = ["model_pipelining_performance_analysis.cc"],
+    deps = [
+        "//src/cpp/pipeline:common",
+        "//src/cpp/pipeline:pipelined_model_runner",
+        "//src/cpp/pipeline:test_utils",
+        "//src/cpp/pipeline:utils",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/strings",
+        "@glog",
+        "@libedgetpu//:header",
+        "@org_tensorflow//tensorflow/lite:framework",
     ],
 )

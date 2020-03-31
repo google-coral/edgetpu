@@ -18,17 +18,17 @@
 import_array();
 %}
 
-%numpy_typemaps(uint8_t, NPY_UBYTE, int)
-%apply (uint8_t* IN_ARRAY1, int DIM1) {
-    (const uint8_t* input, int in_size)
+%numpy_typemaps(uint8_t, NPY_UBYTE, size_t)
+%apply (uint8_t* IN_ARRAY1, size_t DIM1) {
+    (const uint8_t* input, size_t in_size)
 }
-%apply (uint8_t* IN_ARRAY2, int DIM1, int DIM2 ) {
-    (const uint8_t* input, int dim1, int dim2)
+%apply (uint8_t* IN_ARRAY2, size_t DIM1, size_t DIM2 ) {
+    (const uint8_t* input, size_t dim1, size_t dim2)
 }
-%numpy_typemaps(float, NPY_FLOAT, int)
-%apply (float* IN_ARRAY1, int DIM1) {
-    (const float* weights, int weights_size),
-    (const float* biases, int biases_size)
+%numpy_typemaps(float, NPY_FLOAT, size_t)
+%apply (float* IN_ARRAY1, size_t DIM1) {
+    (const float* weights, size_t weights_size),
+    (const float* biases, size_t biases_size)
 }
 
 %feature("docstring") AppendFullyConnectedAndSoftmaxLayerToModel
@@ -130,12 +130,12 @@ std::string GetRuntimeVersion();
   }
 
   // numpy typemap greedily applies to any method with params
-  // const uint8_t* input, int in_size so we can't easily map
+  // const uint8_t* input, size_t in_size so we can't easily map
   // bytes too.
   PyObject* RunInferenceBytes(PyObject* input_obj) {
     return $self->RunInference(
         reinterpret_cast<uint8_t*>(PyBytes_AS_STRING(input_obj)),
-        static_cast<int>(PyBytes_GET_SIZE(input_obj)));
+        static_cast<size_t>(PyBytes_GET_SIZE(input_obj)));
   }
 
   // raw pointer stored as PyLong, size as PyLong.
@@ -143,7 +143,7 @@ std::string GetRuntimeVersion();
                                                       PyObject* size_obj) {
     return $self->RunInference(
         reinterpret_cast<uint8_t*>(PyLong_AsVoidPtr(input_obj)),
-        static_cast<int>(PyLong_AsLong(size_obj)));
+        static_cast<size_t>(PyLong_AsLong(size_obj)));
   }
 }
 
@@ -172,8 +172,6 @@ namespace imprinting {
 }  // namespace coral
 
 %inline {
-// TODO: Consider moving EdgeTpuState out of EdgeTpuResourceManager
-// and use the same definition here.
 enum class EdgeTpuState {
   kNone,
   kAssigned,
@@ -204,8 +202,8 @@ PyObject* ListEdgeTpuPaths(const EdgeTpuState state) {
 
 PyObject* AppendFullyConnectedAndSoftmaxLayerToModel(
     const std::string& in_model_path, const std::string& out_model_path,
-    const float* weights, int weights_size, const float* biases,
-    int biases_size, float out_tensor_min, float out_tensor_max) {
+    const float* weights, size_t weights_size, const float* biases,
+    size_t biases_size, float out_tensor_min, float out_tensor_max) {
   coral::EdgeTpuErrorReporter reporter;
   const auto& status = coral::learn::AppendFullyConnectedAndSoftmaxLayerToModel(
                in_model_path, out_model_path, weights, weights_size, biases,

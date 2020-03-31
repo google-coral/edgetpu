@@ -35,12 +35,16 @@ def parse_args():
 
 def check_cpu_scaling_governor_status():
   """Checks whether CPU scaling enabled."""
-  with open('/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor') as f:
-    status = f.read()
-  if 'performance' != status.strip():
-    print('************************ WARNING *****************************')
-    print('CPU scaling is enabled! Please switch to \'performance\' mode ')
-    print('**************************************************************')
+  try:
+    with open('/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor') as f:
+      status = f.read()
+
+    if  status.strip() != 'performance':
+      print('************************ WARNING *****************************')
+      print('CPU scaling is enabled! Please switch to \'performance\' mode ')
+      print('**************************************************************')
+  except FileNotFoundError:
+    pass
 
 
 def machine_info():

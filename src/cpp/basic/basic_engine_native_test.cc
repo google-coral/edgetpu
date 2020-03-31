@@ -70,7 +70,7 @@ TEST(BasicEngineNativeBuilderTest, OneTimeBuilder) {
 TEST(BasicEngineNativeTest, TestWithoutInitialization) {
   BasicEngineNative engine;
   float const *result;
-  int result_size;
+  size_t result_size;
   std::vector<uint8_t> input = GetRandomInput(3);
   EXPECT_EQ(kEdgeTpuApiError, engine.RunInference(input.data(), input.size(),
                                                   &result, &result_size));
@@ -83,8 +83,8 @@ TEST(BasicEngineNativeTest, TestWithoutInitialization) {
                                                             &input_tensor_dim));
   ExpectNotInitialized(&engine);
 
-  int const *output_tensor_sizes;
-  int output_tensor_num;
+  size_t const *output_tensor_sizes;
+  size_t output_tensor_num;
   EXPECT_EQ(kEdgeTpuApiError, engine.get_all_output_tensors_sizes(
                                   &output_tensor_sizes, &output_tensor_num));
   ExpectNotInitialized(&engine);
@@ -92,7 +92,7 @@ TEST(BasicEngineNativeTest, TestWithoutInitialization) {
             engine.get_num_of_output_tensors(&output_tensor_num));
   ExpectNotInitialized(&engine);
 
-  int tmp;
+  size_t tmp;
   EXPECT_EQ(kEdgeTpuApiError, engine.get_output_tensor_size(0, &tmp));
   ExpectNotInitialized(&engine);
   EXPECT_EQ(kEdgeTpuApiError, engine.total_output_array_size(&tmp));
@@ -109,7 +109,7 @@ TEST(BasicEngineNativeTest, TestNegativeTensorIndex) {
   BasicEngineNativeBuilder builder(
       TestDataPath("mobilenet_v1_1.0_224_quant.tflite"));
   ASSERT_EQ(kEdgeTpuApiOk, builder(&engine)) << builder.get_error_message();
-  int tensor_size;
+  size_t tensor_size;
   EXPECT_EQ(kEdgeTpuApiError, engine->get_output_tensor_size(-1, &tensor_size));
   EXPECT_EQ("tensor_index must >= 0!", engine->get_error_message());
 }
@@ -119,7 +119,7 @@ TEST(BasicEngineNativeTest, TestIndexOutOfbound) {
   BasicEngineNativeBuilder builder(
       TestDataPath("mobilenet_v1_1.0_224_quant.tflite"));
   ASSERT_EQ(kEdgeTpuApiOk, builder(&engine)) << builder.get_error_message();
-  int tensor_size;
+  size_t tensor_size;
   EXPECT_EQ(kEdgeTpuApiError,
             engine->get_output_tensor_size(1001, &tensor_size));
   EXPECT_EQ("tensor_index doesn't exist!", engine->get_error_message());
@@ -143,13 +143,13 @@ TEST(BasicEngineNativeTest, TestDebugFunctions) {
   EXPECT_EQ(224, input_tensor_shape[2]);
   EXPECT_EQ(3, input_tensor_shape[3]);
 
-  int required_tensor_size;
+  size_t required_tensor_size;
   EXPECT_EQ(kEdgeTpuApiOk, engine->get_input_array_size(&required_tensor_size));
   EXPECT_EQ(224 * 224 * 3, required_tensor_size);
   // Check output tensors.
   int result_size = 1001;
-  int const *output_tensor_sizes;
-  int output_tensor_num;
+  size_t const *output_tensor_sizes;
+  size_t output_tensor_num;
   EXPECT_EQ(kEdgeTpuApiOk, engine->get_all_output_tensors_sizes(
                                &output_tensor_sizes, &output_tensor_num));
   EXPECT_EQ(1, output_tensor_num);
@@ -157,7 +157,7 @@ TEST(BasicEngineNativeTest, TestDebugFunctions) {
   EXPECT_EQ(kEdgeTpuApiOk,
             engine->get_num_of_output_tensors(&output_tensor_num));
   EXPECT_EQ(1, output_tensor_num);
-  int tmp;
+  size_t tmp;
   EXPECT_EQ(kEdgeTpuApiOk, engine->get_output_tensor_size(0, &tmp));
   EXPECT_EQ(result_size, tmp);
 
@@ -174,12 +174,12 @@ TEST(BasicEngineNativeTest, TestDebugFunctionsOnSsdModel) {
   // Test SSD model.
   std::unique_ptr<BasicEngineNative> engine;
   BasicEngineNativeBuilder builder(
-      TestDataPath("mobilenet_ssd_v1_coco_quant_postprocess.tflite"));
+      TestDataPath("ssd_mobilenet_v1_coco_quant_postprocess.tflite"));
   ASSERT_EQ(kEdgeTpuApiOk, builder(&engine)) << builder.get_error_message();
   int const *input_tensor_shape;
   int input_tensor_dim;
-  int const *output_tensor_sizes;
-  int output_tensor_num;
+  size_t const *output_tensor_sizes;
+  size_t output_tensor_num;
   EXPECT_EQ(kEdgeTpuApiOk, engine->get_all_output_tensors_sizes(
                                &output_tensor_sizes, &output_tensor_num));
   // Check input dimensions.
@@ -190,7 +190,7 @@ TEST(BasicEngineNativeTest, TestDebugFunctionsOnSsdModel) {
   EXPECT_EQ(300, input_tensor_shape[1]);
   EXPECT_EQ(300, input_tensor_shape[2]);
   EXPECT_EQ(3, input_tensor_shape[3]);
-  int input_array_size;
+  size_t input_array_size;
   EXPECT_EQ(kEdgeTpuApiOk, engine->get_input_array_size(&input_array_size));
   EXPECT_EQ(300 * 300 * 3, input_array_size);
   // This SSD models is trained to recognize at most 20 bounding boxes.
@@ -200,7 +200,7 @@ TEST(BasicEngineNativeTest, TestDebugFunctionsOnSsdModel) {
   EXPECT_EQ(20, output_tensor_sizes[2]);
   EXPECT_EQ(1, output_tensor_sizes[3]);
 
-  int output_array_size;
+  size_t output_array_size;
   EXPECT_EQ(kEdgeTpuApiOk, engine->total_output_array_size(&output_array_size));
   EXPECT_EQ(121, output_array_size);
 }
@@ -219,12 +219,27 @@ TEST(BasicEngineNativeTest, TestRunInferenceFailure) {
   EXPECT_EQ(kEdgeTpuApiError, engine->model_path(&path));
   EXPECT_EQ("No model path!", engine->get_error_message());
   float const *result;
-  int result_size;
+  size_t result_size;
   std::vector<uint8_t> input = GetRandomInput(3);
   EXPECT_EQ(kEdgeTpuApiError, engine->RunInference(input.data(), input.size(),
                                                    &result, &result_size));
   EXPECT_EQ("Node number 0 (fake-op-double) failed to invoke.\n",
             engine->get_error_message());
+}
+
+TEST(BasicEngineNativeTest, TestRunInferenceFailure_InputBufferTooSmall) {
+  std::unique_ptr<BasicEngineNative> engine;
+  BasicEngineNativeBuilder builder(
+      TestDataPath("mobilenet_v1_1.0_224_quant.tflite"));
+  ASSERT_EQ(kEdgeTpuApiOk, builder(&engine)) << builder.get_error_message();
+  float const *result;
+  size_t result_size;
+  std::vector<uint8_t> input = GetRandomInput(224 * 224 * 3 - 1);
+  EXPECT_EQ(kEdgeTpuApiError, engine->RunInference(input.data(), input.size(),
+                                                   &result, &result_size));
+  EXPECT_EQ(
+      "Input buffer size 150527 smaller than model input tensor size 150528.",
+      engine->get_error_message());
 }
 
 TEST(BasicEngineNativeTest, TestRunInferenceSuccess) {
@@ -233,12 +248,49 @@ TEST(BasicEngineNativeTest, TestRunInferenceSuccess) {
       TestDataPath("mobilenet_v1_1.0_224_quant_edgetpu.tflite"));
   ASSERT_EQ(kEdgeTpuApiOk, builder(&engine)) << builder.get_error_message();
   float const *result;
-  int result_size;
+  size_t result_size;
   std::vector<uint8_t> input = GetRandomInput(224 * 224 * 3);
   EXPECT_EQ(kEdgeTpuApiOk, engine->RunInference(input.data(), input.size(),
                                                 &result, &result_size));
   EXPECT_EQ("", engine->get_error_message());
 }
+
+TEST(BasicEngineNativeTest, TestRunInferenceSuccessFloatInputs) {
+  std::unique_ptr<BasicEngineNative> engine;
+  BasicEngineNativeBuilder builder(
+      TestDataPath("mobilenet_v1_1.0_224_ptq_float_io_edgetpu.tflite"));
+  ASSERT_EQ(kEdgeTpuApiOk, builder(&engine)) << builder.get_error_message();
+  float const *result;
+  size_t result_size;
+
+  std::vector<float> float_inputs(224 * 224 * 3);
+  // Generates random inputs within [-1,1].
+  std::generate(float_inputs.begin(), float_inputs.end(), [] {
+    std::random_device rd;
+    std::mt19937 mt(rd());
+    std::uniform_real_distribution<float> dist(-1, 1);
+    return dist(mt);
+  });
+  EXPECT_EQ(kEdgeTpuApiOk,
+            engine->RunInference(float_inputs.data(), float_inputs.size(),
+                                 &result, &result_size));
+  EXPECT_EQ("", engine->get_error_message());
+}
+
+TEST(BasicEngineNativeTest, TestRunInferenceSuccess_PaddedInputBuffer) {
+  std::unique_ptr<BasicEngineNative> engine;
+  BasicEngineNativeBuilder builder(
+      TestDataPath("mobilenet_v1_1.0_224_quant_edgetpu.tflite"));
+  ASSERT_EQ(kEdgeTpuApiOk, builder(&engine)) << builder.get_error_message();
+  float const *result;
+  size_t result_size;
+  // Input buffer has one extra padding byte.
+  std::vector<uint8_t> input = GetRandomInput(224 * 224 * 3 + 1);
+  EXPECT_EQ(kEdgeTpuApiOk, engine->RunInference(input.data(), input.size(),
+                                                &result, &result_size));
+  EXPECT_EQ("", engine->get_error_message());
+}
+
 }  // namespace
 }  // namespace coral
 

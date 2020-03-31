@@ -22,9 +22,9 @@ class ImprintingEnginePythonWrapper {
 
   PyObject* SaveModel(const std::string& output_path);
 
-  PyObject* Train(const uint8_t* input, int dim1, int dim2, int class_id);
+  PyObject* Train(const uint8_t* input, size_t dim1, size_t dim2, int class_id);
 
-  PyObject* RunInference(const uint8_t* input, int in_size);
+  PyObject* RunInference(const uint8_t* input, size_t in_size);
 
   // Gets time consumed for last inference (milliseconds).
   PyObject* get_inference_time() const;

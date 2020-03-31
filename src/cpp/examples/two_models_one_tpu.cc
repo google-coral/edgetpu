@@ -38,14 +38,19 @@ int main(int argc, char* argv[]) {
 
   // Modify the following accordingly to try different models.
   const std::string bird_model_path =
-      argc == 5 ? argv[1] : "/tmp/edgetpu_cpp_example/inat_bird_edgetpu.tflite";
+      argc == 5 ? argv[1]
+                : coral::GetTempPrefix() +
+                      "/edgetpu_cpp_example/inat_bird_edgetpu.tflite";
   const std::string plant_model_path =
       argc == 5 ? argv[2]
-                : "/tmp/edgetpu_cpp_example/inat_plant_edgetpu.tflite";
+                : coral::GetTempPrefix() +
+                      "/edgetpu_cpp_example/inat_plant_edgetpu.tflite";
   const std::string bird_image_path =
-      argc == 5 ? argv[3] : "/tmp/edgetpu_cpp_example/bird.bmp";
+      argc == 5 ? argv[3]
+                : coral::GetTempPrefix() + "/edgetpu_cpp_example/bird.bmp";
   const std::string plant_image_path =
-      argc == 5 ? argv[4] : "/tmp/edgetpu_cpp_example/plant.bmp";
+      argc == 5 ? argv[4]
+                : coral::GetTempPrefix() + "/edgetpu_cpp_example/plant.bmp";
 
   const int num_inferences = 2000;
   const int batch_size = 10;

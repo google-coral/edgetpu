@@ -1,0 +1,1 @@
+out/{arch}/benchmarks/src/cpp/basic/models_benchmark --benchmark_out={benchmark_result_path} --benchmark_out_format=csv --test_data_dir={test_data}

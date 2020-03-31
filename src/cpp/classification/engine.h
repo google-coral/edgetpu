@@ -42,7 +42,7 @@ class ClassificationEngine : public BasicEngine {
     Validate();
   }
 
-  // Classify with input tensor.
+  // Classifies with input tensor.
   //  - 'input' : vector of uint8, input to the model.
   //  - 'threshold' : float, minimum confidence threshold for returned
   //       classifications. For example, use 0.5 to receive only classifications

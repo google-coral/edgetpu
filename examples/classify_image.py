@@ -11,7 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""A demo to classify image."""
+r"""A demo using `ClassificationEngine` to classify an image.
+
+You can run this example with the following command, which uses a
+MobileNet model trained with the iNaturalist birds dataset, so it's
+great at identifying different types of birds.
+
+python3 classify_image.py \
+--model models/mobilenet_v2_1.0_224_inat_bird_quant_edgetpu.tflite \
+--label models/inat_bird_labels.txt \
+--image images/parrot.jpg
+"""
 
 import argparse
 from edgetpu.classification.engine import ClassificationEngine

@@ -53,10 +53,10 @@ std::string BasicEnginePythonWrapper::Init(const std::string& model_path,
 }
 
 PyObject* BasicEnginePythonWrapper::RunInference(const uint8_t* input,
-                                                 int in_size) {
+                                                 size_t in_size) {
   ENSURE_ENGINE_INIT();
   float const* output;
-  int out_size;
+  size_t out_size;
   EdgeTpuApiStatus status;
   // Let RunInference function play nicely with Python threading.
   Py_BEGIN_ALLOW_THREADS;
@@ -65,7 +65,7 @@ PyObject* BasicEnginePythonWrapper::RunInference(const uint8_t* input,
   // Report errors after taking the GIL, or we crash.
   ENSURE_ENGINE_STATUS(status);
   // Parse results.
-  npy_intp dims[1] = {out_size};
+  npy_intp dims[1] = {static_cast<npy_intp>(out_size)};
   return PyArray_SimpleNewFromData(1, dims, NPY_FLOAT, (void*)(output));
 }
 
@@ -81,17 +81,24 @@ PyObject* BasicEnginePythonWrapper::get_input_tensor_shape() const {
 
 PyObject* BasicEnginePythonWrapper::get_all_output_tensors_sizes() const {
   ENSURE_ENGINE_INIT();
-  int* output = nullptr;
-  int size = 0;
-  ENSURE_ENGINE_STATUS(
-      engine_->get_all_output_tensors_sizes((int const**)&output, &size));
-  npy_intp dims[1] = {size};
-  return PyArray_SimpleNewFromData(1, dims, NPY_INT, (void*)output);
+  size_t const* output = nullptr;
+  size_t size = 0;
+
+  constexpr int npy_datatype =
+      sizeof(*output) == NPY_SIZEOF_LONG ? NPY_ULONG : NPY_ULONGLONG;
+  constexpr int npy_datatype_size =
+      npy_datatype == NPY_ULONG ? NPY_SIZEOF_LONG : NPY_SIZEOF_LONGLONG;
+  static_assert(sizeof(*output) == npy_datatype_size,
+                "size_t and npy_datatype are not the same size");
+
+  ENSURE_ENGINE_STATUS(engine_->get_all_output_tensors_sizes(&output, &size));
+  npy_intp dims[1] = {static_cast<npy_intp>(size)};
+  return PyArray_SimpleNewFromData(1, dims, npy_datatype, (void*)output);
 }
 
 PyObject* BasicEnginePythonWrapper::get_num_of_output_tensors() const {
   ENSURE_ENGINE_INIT();
-  int ret;
+  size_t ret;
   ENSURE_ENGINE_STATUS(engine_->get_num_of_output_tensors(&ret));
   return PyLong_FromLong(ret);
 }
@@ -99,31 +106,31 @@ PyObject* BasicEnginePythonWrapper::get_num_of_output_tensors() const {
 PyObject* BasicEnginePythonWrapper::get_output_tensor_size(
     int tensor_index) const {
   ENSURE_ENGINE_INIT();
-  int ret;
-  ENSURE_ENGINE_STATUS(engine_->get_output_tensor_size(tensor_index, &ret));
-  return PyLong_FromLong(ret);
+  size_t size;
+  ENSURE_ENGINE_STATUS(engine_->get_output_tensor_size(tensor_index, &size));
+  return PyLong_FromLong(size);
 }
 
 PyObject* BasicEnginePythonWrapper::required_input_array_size() const {
   ENSURE_ENGINE_INIT();
-  int size;
+  size_t size;
   ENSURE_ENGINE_STATUS(engine_->get_input_array_size(&size));
   return PyLong_FromLong(size);
 }
 
 PyObject* BasicEnginePythonWrapper::total_output_array_size() const {
   ENSURE_ENGINE_INIT();
-  int size;
+  size_t size;
   ENSURE_ENGINE_STATUS(engine_->total_output_array_size(&size));
   return PyLong_FromLong(size);
 }
 
 PyObject* BasicEnginePythonWrapper::get_raw_output() const {
   ENSURE_ENGINE_INIT();
-  float* output = nullptr;
-  int size = 0;
-  ENSURE_ENGINE_STATUS(engine_->get_raw_output((float const**)&output, &size));
-  npy_intp dims[1] = {size};
+  float const* output = nullptr;
+  size_t size = 0;
+  ENSURE_ENGINE_STATUS(engine_->get_raw_output(&output, &size));
+  npy_intp dims[1] = {static_cast<npy_intp>(size)};
   return PyArray_SimpleNewFromData(1, dims, NPY_FLOAT, (void*)(output));
 }
 

@@ -3,5 +3,7 @@ recursive-include docs *
 recursive-include tests *
 recursive-include examples *
 include edgetpu/swig/*.so
+include edgetpu/swig/*.dll
+include edgetpu/swig/*.pyd
 include LICENSE
 include README.md

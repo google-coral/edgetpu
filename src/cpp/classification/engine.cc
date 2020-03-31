@@ -19,7 +19,7 @@ struct ClassificationCandidateComparator {
 };
 
 void ClassificationEngine::Validate() {
-  std::vector<int> output_tensor_sizes = get_all_output_tensors_sizes();
+  std::vector<size_t> output_tensor_sizes = get_all_output_tensors_sizes();
   CHECK_EQ(output_tensor_sizes.size(), 1)
       << "Format error: classification model should have one output tensor "
          "only!";

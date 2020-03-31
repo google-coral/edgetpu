@@ -25,7 +25,7 @@ class BasicEnginePythonWrapper {
   std::string Init(const std::string& model_path,
                    const std::string& device_path);
 
-  PyObject* RunInference(const uint8_t* input, int in_size);
+  PyObject* RunInference(const uint8_t* input, size_t in_size);
 
   // Gets shape of input tensor.
   // The value for each dimension is unsigned long, which may be converted to

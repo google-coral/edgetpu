@@ -7,13 +7,14 @@
 #include "src/cpp/test_utils.h"
 
 ABSL_FLAG(std::string, model_path,
-          "/tmp/mobilenet_v1_1.0_224_quant_edgetpu.tflite",
+          coral::GetTempPrefix() + "/mobilenet_v1_1.0_224_quant_edgetpu.tflite",
           "Path to the tflite model.");
 
-ABSL_FLAG(std::string, image_path, "/tmp/cat.bmp",
+ABSL_FLAG(std::string, image_path, coral::GetTempPrefix() + "/cat.bmp",
           "Path to the image to be classified.");
 
-ABSL_FLAG(std::string, labels_path, "/tmp/imagenet_labels.txt",
+ABSL_FLAG(std::string, labels_path,
+          coral::GetTempPrefix() + "/imagenet_labels.txt",
           "Path to the imagenet labels.");
 
 void ClassifyImage(const std::string& model_path, const std::string& image_path,

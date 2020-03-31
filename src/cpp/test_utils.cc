@@ -1,11 +1,15 @@
 #include "src/cpp/test_utils.h"
 
-#include <dirent.h>
 #include <sys/types.h>
 
+#include <chrono>  // NOLINT
+#include <cstdint>
+#include <cstdlib>
 #include <fstream>
+#include <limits>
 #include <random>
 #include <string>
+#include <thread>  // NOLINT
 
 #include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
@@ -21,6 +25,15 @@
 ABSL_FLAG(std::string, test_data_dir, "test_data", "Test data directory");
 
 namespace coral {
+
+std::string GetTempPrefix() {
+  const char* env_temp = getenv("TEMP");
+  if (env_temp) {
+    return env_temp;
+  } else {
+    return "/tmp";
+  }
+}
 
 namespace {
 
@@ -114,7 +127,7 @@ std::vector<uint8_t> ReadBmp(const std::string& input_bmp_name,
   *height = to_int32(img_bytes + 22);
   *channels = bpp / 8;
   // Currently supports RGB and grayscale image at this function.
-  CHECK((*width) > 0 && (*height) > 0 && ((*channels) == 3 || (*channels) == 1))
+  CHECK(*width > 0 && *height > 0 && (*channels == 3 || *channels == 1))
       << "Unsupported image format. width, height, channels: " << *width << ", "
       << *height << ", " << *channels << "\n";
 
@@ -140,6 +153,12 @@ void ResizeImage(const ImageDims& in_dims, const uint8_t* in,
   const int wanted_width = out_dims[1];
   const int wanted_channels = out_dims[2];
   const int number_of_pixels = image_height * image_width * image_channels;
+  if (image_height == wanted_height && image_width == wanted_width &&
+      image_channels == wanted_channels) {
+    VLOG(1) << "No resizing needed for input image.";
+    std::memcpy(out, in, number_of_pixels);
+    return;
+  }
   std::unique_ptr<tflite::Interpreter> interpreter(new tflite::Interpreter);
   int base_index = 0;
   // two inputs: input and new_sizes
@@ -212,10 +231,12 @@ std::string TestDataPath(const std::string& name) {
 
 std::vector<uint8_t> GetRandomInput(const int n) {
   unsigned int seed = 1;
+  std::default_random_engine generator(seed);
+  std::uniform_int_distribution<> distribution(0, UINT8_MAX);
   std::vector<uint8_t> result;
   result.resize(n);
   for (int i = 0; i < n; ++i) {
-    result[i] = rand_r(&seed) % 256;
+    result[i] = distribution(generator);
   }
   return result;
 }
@@ -242,26 +263,27 @@ std::vector<uint8_t> GetInputFromImage(const std::string& image_path,
 
   if (target_dims[2] == 1 && (image_dims[2] == 3 || image_dims[2] == 4)) {
     in = RgbToGrayscale(in, image_dims);
+    image_dims[2] = 1;
   }
   ResizeImage(image_dims, in.data(), target_dims, result.data());
   return result;
 }
 
-std::vector<std::string> GetAllModels() {
-  DIR* dirp = opendir(TestDataPath("").c_str());
-  struct dirent* dp;
-  std::vector<std::string> ret;
-  while ((dp = readdir(dirp)) != nullptr) {
-    if (EndsWith(dp->d_name, ".tflite")) ret.push_back(dp->d_name);
-  }
-  closedir(dirp);
-  return ret;
+void TestWithRandomInput(const RandomInputTestParams& test_params) {
+  TestWithRandomInput(test_params.model_path,
+                      test_params.expected_num_output_tensors);
 }
 
-void TestWithRandomInput(const std::string& model_path) {
-  // Load the model.
+void TestWithRandomInput(const std::string& model_path,
+                         int expected_num_output_tensors) {
+  LOG(INFO) << "Testing model: " << model_path;
   BasicEngine engine(model_path);
-  engine.RunInference(GetRandomInput(engine.get_input_tensor_shape()));
+  const auto& results =
+      engine.RunInference(GetRandomInput(engine.get_input_tensor_shape()));
+  ASSERT_EQ(expected_num_output_tensors, results.size());
+  for (const auto& r : results) {
+    EXPECT_FALSE(r.empty());
+  }
 }
 
 std::string GenerateRandomFilePath(const std::string& prefix,
@@ -295,13 +317,27 @@ bool TopKContains(const std::vector<ClassificationCandidate>& topk, int label) {
   return false;
 }
 
-// Tests a classification model with customized preprocessing and rgb2bgr
-// option.
+void TestClassification(const ClassificationTestParams& test_params) {
+  TestClassification(test_params.model_path, test_params.image_path,
+                     test_params.effective_scale, test_params.effective_means,
+                     test_params.rgb2bgr, test_params.score_threshold,
+                     test_params.k, test_params.expected_topk_label);
+}
+
 void TestClassification(const std::string& model_path,
                         const std::string& image_path, float effective_scale,
                         const std::vector<float>& effective_means, bool rgb2bgr,
                         float score_threshold, int k, int expected_topk_label) {
-  LOG(INFO) << "Testing model: " << model_path;
+  LOG(INFO) << "Testing parameters:";
+  LOG(INFO) << "model_path: " << model_path;
+  LOG(INFO) << "image_path: " << image_path;
+  LOG(INFO) << "effective_scale: " << effective_scale;
+  for (int i = 0; i < effective_means.size(); ++i)
+    LOG(INFO) << "effective_means: " << effective_means[i];
+  LOG(INFO) << "score_threshold: " << score_threshold;
+  LOG(INFO) << "k: " << k;
+  LOG(INFO) << "expected_topk_label: " << expected_topk_label;
+  LOG(INFO) << "rgb2bgr: " << rgb2bgr;
   // Load the model.
   ClassificationEngine engine(model_path);
   std::vector<int> input_tensor_shape = engine.get_input_tensor_shape();
@@ -332,9 +368,21 @@ void TestClassification(const std::string& model_path,
   }
 
   CHECK(!input_tensor.empty()) << "Input image path: " << image_path;
-  EXPECT_TRUE(TopKContains(
-      engine.ClassifyWithInputTensor(input_tensor, score_threshold, k),
-      expected_topk_label));
+  const auto results =
+      engine.ClassifyWithInputTensor(input_tensor, score_threshold, k);
+  const bool top_k_contains_expected =
+      TopKContains(results, expected_topk_label);
+  if (!top_k_contains_expected) {
+    LOG(ERROR) << "Top " << k << " results do not contain expected label "
+               << expected_topk_label << " with threshold=" << score_threshold;
+    const auto no_threshold_results = engine.ClassifyWithInputTensor(
+        input_tensor, -std::numeric_limits<float>::infinity(), k);
+    LOG(ERROR) << "Without score threshold, top " << k << " results are:";
+    for (const auto& p : no_threshold_results) {
+      LOG(ERROR) << p.id << ", " << p.score;
+    }
+  }
+  EXPECT_TRUE(top_k_contains_expected);
 }
 
 // Tests a classification model with customized preprocessing.
@@ -343,24 +391,16 @@ void TestClassification(const std::string& model_path,
                         const std::vector<float>& effective_means,
                         float score_threshold, int k, int expected_topk_label) {
   TestClassification(model_path, image_path, effective_scale, effective_means,
-                     false, score_threshold, k, expected_topk_label);
+                     /*rgb2bgr=*/false, score_threshold, k,
+                     expected_topk_label);
 }
 
 void TestClassification(const std::string& model_path,
                         const std::string& image_path, float score_threshold,
                         int k, int expected_topk_label) {
-  LOG(INFO) << "Testing model: " << model_path;
-  // Load the model.
-  ClassificationEngine engine(model_path);
-  std::vector<int> input_tensor_shape = engine.get_input_tensor_shape();
-  // Read image.
-  std::vector<uint8_t> input_tensor = GetInputFromImage(
-      image_path,
-      {input_tensor_shape[1], input_tensor_shape[2], input_tensor_shape[3]});
-  CHECK(!input_tensor.empty()) << "Input image path: " << image_path;
-  EXPECT_TRUE(TopKContains(
-      engine.ClassifyWithInputTensor(input_tensor, score_threshold, k),
-      expected_topk_label));
+  const std::vector<float> effective_means{0, 0, 0};
+  TestClassification(model_path, image_path, /*effective_scale=*/1.f,
+                     effective_means, score_threshold, k, expected_topk_label);
 }
 
 void TestClassification(const std::string& model_path,
@@ -382,7 +422,7 @@ void TestDetection(const std::string& model_path, const std::string& image_path,
 
   auto candiates =
       engine.DetectWithInputTensor(input_tensor, score_threshold, /*top_k=*/1);
-  EXPECT_EQ(candiates.size(), 1);
+  ASSERT_EQ(candiates.size(), 1);
   DetectionCandidate result = candiates[0];
   EXPECT_EQ(result.label, expected_label);
   EXPECT_GT(result.score, score_threshold);
@@ -461,7 +501,7 @@ void InferenceStressTest(const std::string& model_path, int runs,
     const auto& input_data = GetRandomInput(engine.get_input_tensor_shape());
     const auto& result = engine.RunInference(input_data);
     CHECK(!result.empty());
-    sleep(sleep_sec);
+    std::this_thread::sleep_for(std::chrono::seconds(sleep_sec));
   }
 }
 
@@ -477,25 +517,43 @@ float ComputeIntersectionOverUnion(const std::vector<uint8_t>& mask1,
          (mask1.size() + mask2.size() - isec_area);
 }
 
-// Tests segmentation models that include ArgMax operator, returns the
-// prediction results.
-void TestSegmentationWithArgmax(const std::string& model_name,
-                                const std::string& image_name,
-                                const std::string& seg_name, int size,
-                                float iou_threshold,
-                                std::vector<uint8_t>* pred_segmentation) {
+std::vector<float> ApplyArgmax(const std::vector<float>& raw_result,
+                               int image_size) {
+  CHECK_EQ(raw_result.size() % (image_size * image_size), 0);
+  const int num_classes = raw_result.size() / (image_size * image_size);
+  CHECK_GT(num_classes, 1);
+  std::vector<float> argmax_result(image_size * image_size);
+  for (int i = 0; i < image_size * image_size; ++i) {
+    argmax_result[i] = std::distance(
+        raw_result.begin() + i * num_classes,
+        std::max_element(raw_result.begin() + i * num_classes,
+                         raw_result.begin() + (i + 1) * num_classes));
+  }
+  return argmax_result;
+}
+
+void TestSegmentation(const std::string& model_name,
+                      const std::string& image_name,
+                      const std::string& groundtruth_name, int image_size,
+                      float iou_threshold, bool model_has_argmax,
+                      std::vector<uint8_t>* pred_segmentation) {
   const std::vector<std::vector<float>>& raw_outputs =
       TestWithImage(TestDataPath(model_name), TestDataPath(image_name));
   ASSERT_EQ(1, raw_outputs.size());
-  const auto& argmax_result = raw_outputs[0];
-  ASSERT_EQ(size * size, argmax_result.size());
+  std::vector<float> argmax_result;
+  if (!model_has_argmax) {
+    argmax_result = ApplyArgmax(raw_outputs[0], image_size);
+  } else {
+    argmax_result = raw_outputs[0];
+  }
+  ASSERT_EQ(image_size * image_size, argmax_result.size());
   pred_segmentation->resize(argmax_result.size());
   std::copy(argmax_result.begin(), argmax_result.end(),
             pred_segmentation->begin());
   // Read segmentation labels.
-  std::vector<uint8_t> groundtruth_segmentation =
-      GetInputFromImage(TestDataPath(seg_name), {size, size, 1});
-  ASSERT_EQ(size * size, groundtruth_segmentation.size());
+  std::vector<uint8_t> groundtruth_segmentation = GetInputFromImage(
+      TestDataPath(groundtruth_name), {image_size, image_size, 1});
+  ASSERT_EQ(image_size * image_size, groundtruth_segmentation.size());
   // Set contours which are labelled with 255 to 0 to be consistent with VOC2012
   // eval protocol.
   for (int i = 0; i < groundtruth_segmentation.size(); ++i) {

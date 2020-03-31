@@ -15,7 +15,7 @@ cc_library(
         "//src/cpp:utils",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
-        "@com_google_glog//:glog",
+        "@glog",
         "@org_tensorflow//tensorflow/lite/schema:schema_fbs",
     ],
 )
@@ -27,7 +27,6 @@ cc_test(
     ],
     data = [
         "//test_data:models",
-        "//test_data/imprinting:models",
     ],
     linkstatic = 1,
     deps = [
@@ -38,9 +37,9 @@ cc_test(
         "@com_google_absl//absl/flags:parse",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
-        "@com_google_glog//:glog",
         "@com_google_googletest//:gtest",
         "@flatbuffers",
+        "@glog",
         "@org_tensorflow//tensorflow/lite/schema:schema_fbs",
     ],
 )

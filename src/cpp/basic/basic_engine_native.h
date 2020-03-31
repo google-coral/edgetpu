@@ -35,37 +35,47 @@ class BasicEngineNative {
   BasicEngineNative& operator=(const BasicEngineNative&) = delete;
 
   // For input, we assume there is only one tensor with type uint8_t.
+  // Input buffer could have padded bytes at the end, in which case |in_size|
+  // could be larger than the input tensor size, denoted by n, and only the
+  // first n bytes of the input buffer will be used. |in_size| can not be
+  // smaller than n.
   // For output, when there are multiple tensors we'll store them in one
   // continuous array in order. To parse output correctly, please use
   // get_num_of_output_tensors and get_output_tensor_size to get more info.
-  EdgeTpuApiStatus RunInference(const uint8_t* const input, const int in_size,
+  EdgeTpuApiStatus RunInference(const uint8_t* const input,
+                                const size_t in_size,
                                 float const** const output,
-                                int* const out_size);
+                                size_t* const out_size);
+
+  // Overloads RunInference to take float inputs.
+  EdgeTpuApiStatus RunInference(const float* const input, const size_t in_size,
+                                float const** const output,
+                                size_t* const out_size);
 
   // Gets shape of input tensor.
   EdgeTpuApiStatus get_input_tensor_shape(int const** dims,
                                           int* dims_num) const;
 
   // Gets size of required input array.
-  EdgeTpuApiStatus get_input_array_size(int* array_size) const;
+  EdgeTpuApiStatus get_input_array_size(size_t* array_size) const;
 
-  // Gets shapes of output tensors. We assume that all output tensors are
+  // Gets sizes of output tensors. We assume that all output tensors are
   // in 1 dimension so the output is an array of lengthes for each output
   // tensor.
-  EdgeTpuApiStatus get_all_output_tensors_sizes(int const** tensor_sizes,
-                                                int* tensor_num) const;
+  EdgeTpuApiStatus get_all_output_tensors_sizes(size_t const** tensor_sizes,
+                                                size_t* tensor_num) const;
 
   // Gets number of output tensors.
-  EdgeTpuApiStatus get_num_of_output_tensors(int* output) const;
+  EdgeTpuApiStatus get_num_of_output_tensors(size_t* output) const;
 
   // Gets size of output tensor.
   EdgeTpuApiStatus get_output_tensor_size(const int tensor_index,
-                                          int* const output) const;
+                                          size_t* const output) const;
 
-  EdgeTpuApiStatus total_output_array_size(int* const output) const;
+  EdgeTpuApiStatus total_output_array_size(size_t* const output) const;
 
   // Gets raw output of last inference.
-  EdgeTpuApiStatus get_raw_output(float const** output, int* out_size) const;
+  EdgeTpuApiStatus get_raw_output(float const** output, size_t* out_size) const;
 
   EdgeTpuApiStatus model_path(std::string* path) const;
 
@@ -100,6 +110,10 @@ class BasicEngineNative {
   // Returns the output tensor sizes of the given model, assuming all tensors
   // have been allocated.
   EdgeTpuApiStatus GetOutputTensorSizes();
+  // Helper for RunInference to prevent code repetitions.
+  // This method performs a deep copy of the output tensors to output.
+  EdgeTpuApiStatus ParseAndCopyInferenceResults(float const** const output,
+                                                size_t* const out_size);
 
   // Indicates whether the instance is initialized.
   bool is_initialized_;
@@ -112,10 +126,10 @@ class BasicEngineNative {
   std::unique_ptr<tflite::Interpreter> interpreter_;
   // Shape of input tensor.
   std::vector<int> input_tensor_shape_;
-  int input_array_size_;
+  size_t input_array_size_;
   // Sizes of output tensors.
-  std::vector<int> output_tensor_sizes_;
-  int output_array_size_;
+  std::vector<size_t> output_tensor_sizes_;
+  size_t output_array_size_;
   // Inference result.
   std::vector<float> inference_result_;
   // Time consumed on last inference.

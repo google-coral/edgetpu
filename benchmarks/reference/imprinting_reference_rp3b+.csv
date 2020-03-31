@@ -1,3 +1,2 @@
 MODEL DATA_SET INFERENCE_TIME
-mobilenet_v1_1.0_224_l2norm_quant.tflite open_image_v4_subset 52.93
-mobilenet_v1_1.0_224_l2norm_quant_edgetpu.tflite open_image_v4_subset 2.52
+mobilenet_v1_1.0_224_l2norm_quant_edgetpu.tflite random 2.52

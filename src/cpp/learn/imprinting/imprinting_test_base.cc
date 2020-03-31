@@ -16,9 +16,8 @@ std::string ImprintingTestBase::ImagePath(const std::string& file_name) {
 
 std::string ImprintingTestBase::GenerateInputModelPath(
     const std::string& file_name) {
-  return absl::StrCat(
-      TestDataPath("/imprinting/"),
-      file_name + (tpu_tflite_ ? "_edgetpu.tflite" : ".tflite"));
+  return TestDataPath(file_name +
+                      (tpu_tflite_ ? "_edgetpu.tflite" : ".tflite"));
 }
 
 std::string ImprintingTestBase::GenerateOutputModelPath(

@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -40,39 +39,65 @@ if [[ -f /etc/mendel_version ]]; then
   exit 1
 fi
 
-case `uname -m` in
-  x86_64)
-    HOST_GNU_TYPE=x86_64-linux-gnu
-    CPU_DIR=k8
-    ;;
-  armv7l)
-    HOST_GNU_TYPE=arm-linux-gnueabihf
-    CPU_DIR=armv7a
-    ;;
-  aarch64)
-    HOST_GNU_TYPE=aarch64-linux-gnu
-    CPU_DIR=aarch64
-    ;;
-  *)
-    error "Your platform is not supported. There's nothing to uninstall."
-    exit 1
-    ;;
-esac
+readonly OS="$(uname -s)"
+readonly MACHINE="$(uname -m)"
 
-if [[ -x "$(command -v udevadm)" ]]; then
-  UDEV_RULE_PATH="/etc/udev/rules.d/99-edgetpu-accelerator.rules"
-  if [[ -f "${UDEV_RULE_PATH}" ]]; then
-    info "Uninstalling device rule file [${UDEV_RULE_PATH}]..."
-    rm -f "${UDEV_RULE_PATH}"
-    udevadm control --reload-rules && udevadm trigger
-    info "Done."
-  fi
+if [[ "${OS}" == "Linux" ]]; then
+  case "${MACHINE}" in
+    x86_64)
+      HOST_GNU_TYPE=x86_64-linux-gnu
+      CPU_DIR=k8
+      ;;
+    armv7l)
+      HOST_GNU_TYPE=arm-linux-gnueabihf
+      CPU_DIR=armv7a
+      ;;
+    aarch64)
+      HOST_GNU_TYPE=aarch64-linux-gnu
+      CPU_DIR=aarch64
+      ;;
+    *)
+      error "Your Linux platform is not supported. There's nothing to uninstall."
+      exit 1
+      ;;
+  esac
+elif [[ "${OS}" == "Darwin" ]]; then
+  CPU=darwin
+else
+  error "Your operating system is not supported. There's nothing to uninstall."
+  exit 1
 fi
 
-LIBEDGETPU_DST="/usr/lib/${HOST_GNU_TYPE}/libedgetpu.so.1.0"
-if [[ -f "${LIBEDGETPU_DST}" ]]; then
-  info "Uninstalling Edge TPU runtime library [${LIBEDGETPU_DST}]..."
-  rm -f "${LIBEDGETPU_DST}"
-  ldconfig
-  info "Done."
+if [[ "${CPU}" == "darwin" ]]; then
+  LIBEDGETPU_LIB_DIR="/usr/local/lib"
+
+  if [[ -f "${LIBEDGETPU_LIB_DIR}/libedgetpu.1.0.dylib" ]]; then
+    info "Uninstalling Edge TPU runtime library..."
+    rm -f "${LIBEDGETPU_LIB_DIR}/libedgetpu.1.0.dylib"
+    info "Done"
+  fi
+
+  if [[ -L "${LIBEDGETPU_LIB_DIR}/libedgetpu.1.dylib" ]]; then
+    info "Uninstalling Edge TPU runtime library symlink..."
+    rm -f "${LIBEDGETPU_LIB_DIR}/libedgetpu.1.dylib"
+    info "Done"
+  fi
+else
+  if [[ -x "$(command -v udevadm)" ]]; then
+    UDEV_RULE_PATH="/etc/udev/rules.d/99-edgetpu-accelerator.rules"
+    if [[ -f "${UDEV_RULE_PATH}" ]]; then
+      info "Uninstalling device rule file [${UDEV_RULE_PATH}]..."
+      rm -f "${UDEV_RULE_PATH}"
+      udevadm control --reload-rules && udevadm trigger
+      info "Done."
+    fi
+  fi
+
+  LIBEDGETPU_DST="/usr/lib/${HOST_GNU_TYPE}/libedgetpu.so.1.0"
+  if [[ -f "${LIBEDGETPU_DST}" ]]; then
+    info "Uninstalling Edge TPU runtime library [${LIBEDGETPU_DST}]..."
+    rm -f "${LIBEDGETPU_DST}"
+    ldconfig
+    info "Done."
+  fi
 fi

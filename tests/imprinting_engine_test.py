@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import os
-import tempfile
 import unittest
 from . import test_utils
 from edgetpu.classification.engine import BasicEngine
@@ -26,9 +25,9 @@ class TestImprintingEnginePythonAPI(unittest.TestCase):
 
   _MODEL_LIST = [
       test_utils.test_data_path(
-          'imprinting/mobilenet_v1_1.0_224_l2norm_quant.tflite'),
+          'mobilenet_v1_1.0_224_l2norm_quant.tflite'),
       test_utils.test_data_path(
-          'imprinting/mobilenet_v1_1.0_224_l2norm_quant_edgetpu.tflite'),
+          'mobilenet_v1_1.0_224_l2norm_quant_edgetpu.tflite'),
   ]
 
   @staticmethod
@@ -129,7 +128,7 @@ class TestImprintingEnginePythonAPI(unittest.TestCase):
     ]
     for model_path in self._MODEL_LIST:
       with self.subTest():
-        with tempfile.NamedTemporaryFile(suffix='.tflite') as output_model_path:
+        with test_utils.TemporaryFile(suffix='.tflite') as output_model_path:
           self._train_and_test(model_path, output_model_path.name, training_datapoints,
                                test_datapoints, keep_classes=False)
 
@@ -142,12 +141,11 @@ class TestImprintingEnginePythonAPI(unittest.TestCase):
     ]
     test_datapoints = [
         {'image_name': 'cat_test_0.bmp', 'label_id': 1001, 'score': 0.99},
-        {'image_name': 'dog_test_0.bmp', 'label_id': 1002, 'score': 0.93},
-        {'image_name': 'hotdog_test_0.bmp', 'label_id': 1003, 'score': 0.95}
+        {'image_name': 'hotdog_test_0.bmp', 'label_id': 1003, 'score': 0.92}
     ]
     for model_path in self._MODEL_LIST:
       with self.subTest():
-        with tempfile.NamedTemporaryFile(suffix='.tflite') as output_model_path:
+        with test_utils.TemporaryFile(suffix='.tflite') as output_model_path:
           self._train_and_test(model_path,
                                output_model_path.name,
                                training_datapoints,
@@ -169,11 +167,11 @@ class TestImprintingEnginePythonAPI(unittest.TestCase):
     ]
     for model_path in self._MODEL_LIST:
       with self.subTest():
-        with tempfile.NamedTemporaryFile(suffix='.tflite') as cat_only_model_path:
+        with test_utils.TemporaryFile(suffix='.tflite') as cat_only_model_path:
           self._train_and_test(model_path, cat_only_model_path.name,
                                training_datapoints, [], keep_classes=False)
           # Retrain based on cat only model.
-          with tempfile.NamedTemporaryFile(suffix='.tflite') as output_model_path:
+          with test_utils.TemporaryFile(suffix='.tflite') as output_model_path:
             self._train_and_test(cat_only_model_path.name,
                                  output_model_path.name,
                                  retrain_training_datapoints,
@@ -183,7 +181,7 @@ class TestImprintingEnginePythonAPI(unittest.TestCase):
   def test_train_all(self):
     for model_path in self._MODEL_LIST:
       with self.subTest():
-        with tempfile.NamedTemporaryFile(suffix='.tflite') as output_model_path:
+        with test_utils.TemporaryFile(suffix='.tflite') as output_model_path:
           data_dir = test_utils.test_data_path('imprinting')
           engine = ImprintingEngine(model_path, keep_classes=False)
           image_shape = self._get_image_shape(model_path)

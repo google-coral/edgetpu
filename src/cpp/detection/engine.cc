@@ -11,7 +11,7 @@
 namespace coral {
 
 void DetectionEngine::Validate() {
-  std::vector<int> output_tensor_sizes = get_all_output_tensors_sizes();
+  std::vector<size_t> output_tensor_sizes = get_all_output_tensors_sizes();
   CHECK_EQ(output_tensor_sizes.size(), 4)
       << "Format error: detection model should have 4 output tensors!";
   // The tensors are <bounding boxes, label ids, scores, number of predictions>.

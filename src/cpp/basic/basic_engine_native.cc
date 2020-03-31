@@ -175,10 +175,16 @@ EdgeTpuApiStatus BasicEngineNative::Init(const std::string& model_path,
 }
 
 EdgeTpuApiStatus BasicEngineNative::RunInference(const uint8_t* const input,
-                                                 const int in_size,
+                                                 const size_t in_size,
                                                  float const** const output,
-                                                 int* const out_size) {
+                                                 size_t* const out_size) {
   BASIC_ENGINE_INIT_CHECK();
+  BASIC_ENGINE_NATIVE_ENSURE(
+      in_size >= input_array_size_,
+      absl::Substitute(
+          "Input buffer size $0 smaller than model input tensor size $1.",
+          in_size, input_array_size_));
+
   const auto& start_time = std::chrono::steady_clock::now();
 
   // Set input tensor to use input buffer and invoke.
@@ -231,6 +237,59 @@ EdgeTpuApiStatus BasicEngineNative::RunInference(const uint8_t* const input,
                              "Input tensor does not reuse the given buffer!");
 
   EDGETPU_API_ENSURE(interpreter_->Invoke() == kTfLiteOk);
+
+  EDGETPU_API_ENSURE_STATUS(ParseAndCopyInferenceResults(output, out_size));
+  std::chrono::duration<double, std::milli> time_span =
+      std::chrono::steady_clock::now() - start_time;
+  inference_time_ = time_span.count();
+
+  return kEdgeTpuApiOk;
+}
+
+EdgeTpuApiStatus BasicEngineNative::RunInference(const float* const input,
+                                                 const size_t in_size,
+                                                 float const** const output,
+                                                 size_t* const out_size) {
+  BASIC_ENGINE_INIT_CHECK();
+  BASIC_ENGINE_NATIVE_ENSURE(
+      in_size >= input_array_size_,
+      absl::Substitute(
+          "Input buffer size $0 smaller than model input tensor size $1.",
+          in_size, input_array_size_));
+
+  const auto& start_time = std::chrono::steady_clock::now();
+
+  // Set input tensor to use input buffer and invoke.
+  const int input_tensor_index = interpreter_->inputs()[0];
+  const TfLiteTensor* input_tensor = interpreter_->tensor(input_tensor_index);
+  const TfLiteType input_type = input_tensor->type;
+  const char* input_name = input_tensor->name;
+  std::vector<int> input_dims(
+      input_tensor->dims->data,
+      input_tensor->dims->data + input_tensor->dims->size);
+
+  EDGETPU_API_ENSURE(interpreter_->SetTensorParametersReadOnly(
+                         input_tensor_index, input_type, input_name, input_dims,
+                         input_tensor->params,
+                         reinterpret_cast<const char*>(input),
+                         in_size * sizeof(float)) == kTfLiteOk);
+
+  float* input_tensor_ptr = interpreter_->typed_input_tensor<float>(0);
+  BASIC_ENGINE_NATIVE_ENSURE(input_tensor_ptr == input,
+                             "Input tensor does not reuse the given buffer!");
+
+  EDGETPU_API_ENSURE(interpreter_->Invoke() == kTfLiteOk);
+
+  EDGETPU_API_ENSURE_STATUS(ParseAndCopyInferenceResults(output, out_size));
+  std::chrono::duration<double, std::milli> time_span =
+      std::chrono::steady_clock::now() - start_time;
+  inference_time_ = time_span.count();
+
+  return kEdgeTpuApiOk;
+}
+
+EdgeTpuApiStatus BasicEngineNative::ParseAndCopyInferenceResults(
+    float const** const output, size_t* const out_size) {
   // Parse results.
   const auto& output_indices = interpreter_->outputs();
   const int num_outputs = output_indices.size();
@@ -274,86 +333,83 @@ EdgeTpuApiStatus BasicEngineNative::RunInference(const uint8_t* const input,
   }
   BASIC_ENGINE_NATIVE_ENSURE(out_idx == output_array_size_,
                              "Abnormal output size!");
-  (*out_size) = inference_result_.size();
-  (*output) = inference_result_.data();
-  std::chrono::duration<double, std::milli> time_span =
-      std::chrono::steady_clock::now() - start_time;
-  inference_time_ = time_span.count();
+  *out_size = inference_result_.size();
+  *output = inference_result_.data();
   return kEdgeTpuApiOk;
 }
 
 EdgeTpuApiStatus BasicEngineNative::get_input_tensor_shape(
     int const** const dims, int* const dims_num) const {
   BASIC_ENGINE_INIT_CHECK();
-  (*dims_num) = input_tensor_shape_.size();
-  (*dims) = input_tensor_shape_.data();
+  *dims_num = input_tensor_shape_.size();
+  *dims = input_tensor_shape_.data();
   return kEdgeTpuApiOk;
 }
 
 EdgeTpuApiStatus BasicEngineNative::get_input_array_size(
-    int* array_size) const {
+    size_t* array_size) const {
   BASIC_ENGINE_INIT_CHECK();
-  (*array_size) = input_array_size_;
+  *array_size = input_array_size_;
   return kEdgeTpuApiOk;
 }
 
 EdgeTpuApiStatus BasicEngineNative::get_all_output_tensors_sizes(
-    int const** const tensor_sizes, int* const tensor_num) const {
+    size_t const** tensor_sizes, size_t* tensor_num) const {
   BASIC_ENGINE_INIT_CHECK();
-  (*tensor_num) = output_tensor_sizes_.size();
-  (*tensor_sizes) = output_tensor_sizes_.data();
+  *tensor_num = output_tensor_sizes_.size();
+  *tensor_sizes = output_tensor_sizes_.data();
   return kEdgeTpuApiOk;
 }
 
 EdgeTpuApiStatus BasicEngineNative::get_num_of_output_tensors(
-    int* output) const {
+    size_t* output) const {
   BASIC_ENGINE_INIT_CHECK();
-  (*output) = output_tensor_sizes_.size();
+  *output = output_tensor_sizes_.size();
   return kEdgeTpuApiOk;
 }
 
 EdgeTpuApiStatus BasicEngineNative::get_output_tensor_size(
-    const int tensor_index, int* const output) const {
+    const int tensor_index, size_t* const output) const {
   BASIC_ENGINE_INIT_CHECK();
   BASIC_ENGINE_NATIVE_ENSURE(tensor_index >= 0, "tensor_index must >= 0!");
   BASIC_ENGINE_NATIVE_ENSURE(tensor_index < output_tensor_sizes_.size(),
                              "tensor_index doesn't exist!");
-  (*output) = output_tensor_sizes_[tensor_index];
+  *output = output_tensor_sizes_[tensor_index];
   return kEdgeTpuApiOk;
 }
 
 EdgeTpuApiStatus BasicEngineNative::total_output_array_size(
-    int* const output) const {
+    size_t* const output) const {
   BASIC_ENGINE_INIT_CHECK();
-  (*output) = output_array_size_;
+  *output = output_array_size_;
   return kEdgeTpuApiOk;
 }
 
 EdgeTpuApiStatus BasicEngineNative::get_raw_output(float const** output,
-                                                   int* out_size) const {
+                                                   size_t* out_size) const {
   BASIC_ENGINE_INIT_CHECK();
-  (*out_size) = inference_result_.size();
-  (*output) = inference_result_.data();
+  *out_size = inference_result_.size();
+  *output = inference_result_.data();
   return kEdgeTpuApiOk;
 }
 
 EdgeTpuApiStatus BasicEngineNative::model_path(std::string* path) const {
   BASIC_ENGINE_INIT_CHECK();
   BASIC_ENGINE_NATIVE_ENSURE(!model_path_.empty(), "No model path!");
-  (*path) = model_path_;
+  *path = model_path_;
   return kEdgeTpuApiOk;
 }
 
 EdgeTpuApiStatus BasicEngineNative::device_path(std::string* path) const {
   BASIC_ENGINE_INIT_CHECK();
-  (*path) = edgetpu_resource_->path();
+  *path = edgetpu_resource_->path();
   return kEdgeTpuApiOk;
 }
 
 EdgeTpuApiStatus BasicEngineNative::get_inference_time(
     float* const time) const {
   BASIC_ENGINE_INIT_CHECK();
-  (*time) = inference_time_;
+  *time = inference_time_;
   return kEdgeTpuApiOk;
 }
 
@@ -395,7 +451,7 @@ EdgeTpuApiStatus BasicEngineNativeBuilder::operator()(
   EDGETPU_API_REPORT_ERROR(
       error_reporter_, !engine,
       "Null output pointer passed to BasicEngineNativeBuilder!");
-  (*engine) = absl::make_unique<BasicEngineNative>();
+  *engine = absl::make_unique<BasicEngineNative>();
   if (read_from_file_) {
     EDGETPU_API_REPORT_ERROR(
         error_reporter_,

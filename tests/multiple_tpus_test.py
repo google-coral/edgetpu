@@ -55,7 +55,7 @@ class MultipleTpusTest(unittest.TestCase):
       tid = threading.get_ident()
       print('Thread: %d, %d inferences for detection task' %
             (tid, num_inferences))
-      model_name = 'mobilenet_ssd_v1_coco_quant_postprocess_edgetpu.tflite'
+      model_name = 'ssd_mobilenet_v1_coco_quant_postprocess_edgetpu.tflite'
       engine = DetectionEngine(test_utils.test_data_path(model_name))
       print('Thread: %d, using device %s' % (tid, engine.device_path()))
       with test_utils.test_image('cat.bmp') as img:

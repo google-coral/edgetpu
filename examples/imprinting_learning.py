@@ -12,49 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-r"""A demo to demonstrate imprinting for classification transfer learning.
+r"""A demo for on-device imprinting (transfer learning) of a classification model.
 
-Args:
-  - model_path
-    Path of base model, e.g.,
-    'test_data/imprinting/mobilenet_v1_1.0_224_l2norm_quant_edgetpu.tflite'
+Here are the steps:
+  1) Download the data set for transfer learning:
 
-  - data
-    Path to the directory of data set, e.g., 'test_data/open_image_v4_subset'.
-    Please notice that you need to run 'test_data/download_imprinting_test_data.sh'
-    to generate the data set.
+      curl -O https://raw.githubusercontent.com/google-coral/edgetpu/master/test_data/download_imprinting_test_data.sh \
+      -O https://raw.githubusercontent.com/google-coral/edgetpu/master/test_data/open_image_v4_subset.csv
 
-  - output
-    Output name of the trained model. By default it is
-    '[model_name]_retrained.tflite'.
+      bash download_imprinting_test_data.sh
 
-  - test_ratio
-    The ratio of images used for test. By default it's 0.25.
+    This downloads 10 categories, 20 images for each category, saving it into
+    a directory named `open_image_v4_subset`.
 
-  - keep_classes
-    Bool, whether to keep base model classes. It is False if not set.
+  2) Start training the new classification model:
 
+      python3 imprinting_learning.py \
+      --model_path models/mobilenet_v1_1.0_224_l2norm_quant_edgetpu.tflite \
+      --data open_image_v4_subset \
+      --output my_model.tflite
 
-Steps:
-  - Under the parent directory `edgetpu/`.
+  3) Run an inference with the new model:
 
-  - Prepares the data set for transfer learning.
-    Run 'bash test_data/download_imprinting_test_data.sh' to download the data
-    we prepared. There are 10 categories, 20 images for each category. 200
-    images in total.
+      python3 classify_image.py \
+      --model my_model.tflite \
+      --label my_model.txt \
+      --image images/cat.bmp
 
-  - Run this demo to create the new classification model.
-    python3 examples/imprinting_learning.py
-   --model_path='test_data/imprinting/mobilenet_v1_1.0_224_l2norm_quant_edgetpu.tflite'
-   --data='test_data/open_image_v4_subset'
-   --output='my_model.tflite'
-
-  - Verify with Classification model.
-    'my_model.tflite' and 'my_model.txt'(labels file) produced by last step can
-    be treated as same as a normal classification model. You can use
-    ClassificationEngine for verification or further development.
-    python3 examples/classify_image.py --model='my_model.tflite' \
-      --label='my_model.txt' --image='test_data/cat.bmp'
+For more information, see
+https://coral.ai/docs/edgetpu/retrain-classification-ondevice/
 """
 
 import argparse

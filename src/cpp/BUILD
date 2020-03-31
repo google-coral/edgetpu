@@ -4,6 +4,10 @@ package(
 
 licenses(["notice"])  # Apache 2.0
 
+exports_files([
+    "models_benchmark.cc.template",
+])
+
 cc_library(
     name = "error_reporter",
     srcs = [
@@ -65,7 +69,7 @@ cc_library(
     deps = [
         "//src/cpp:error_reporter",
         "@com_google_absl//absl/strings",
-        "@com_google_glog//:glog",
+        "@glog",
     ],
 )
 
@@ -110,8 +114,8 @@ cc_library(
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
-        "@com_google_glog//:glog",
         "@com_google_googletest//:gtest",
+        "@glog",
         "@org_tensorflow//tensorflow/lite:builtin_op_data",
     ],
 )
@@ -129,5 +133,55 @@ cc_library(
         "@flatbuffers",
         "@org_tensorflow//tensorflow/lite:framework",
         "@org_tensorflow//tensorflow/lite/kernels:kernel_util",
+    ],
+)
+
+cc_library(
+    name = "classification_model_test_main",
+    testonly = 1,
+    srcs = [
+        "classification_model_test_main.cc",
+    ],
+    linkstatic = 1,
+    deps = [
+        ":test_utils",
+        ":utils",
+        "//src/cpp/classification:engine",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+        "@glog",
+    ],
+)
+
+cc_library(
+    name = "model_random_input_test_main",
+    testonly = 1,
+    srcs = [
+        "model_random_input_test_main.cc",
+    ],
+    linkstatic = 1,
+    deps = [
+        ":test_utils",
+        ":utils",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+        "@glog",
+    ],
+)
+
+cc_library(
+    name = "benchmark_main",
+    testonly = 1,
+    srcs = [
+        "benchmark_main.cc",
+    ],
+    deps = [
+        ":test_utils",
+        "@com_github_google_benchmark//:benchmark",
+        "@com_google_absl//absl/flags:parse",
     ],
 )

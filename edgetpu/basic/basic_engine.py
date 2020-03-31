@@ -77,13 +77,13 @@ class BasicEngine(object):
     Args:
       model_path (str): Path to a TensorFlow Lite (``.tflite``) file. This model
         must be `compiled for the Edge TPU
-        <https://coral.withgoogle.com/docs/edgetpu/compiler/>`_; otherwise, it simply
+        <https://coral.ai/docs/edgetpu/compiler/>`_; otherwise, it simply
         executes on the host CPU.
       device_path (str): The device path for the Edge TPU this engine should
         use. This argument is needed only when you have multiple Edge TPUs and
         more inference engines than available Edge TPUs. For details, read `how
         to use multiple Edge TPUs
-        <https://coral.withgoogle.com/docs/edgetpu/multiple-edgetpu/>`_.
+        <https://coral.ai/docs/edgetpu/multiple-edgetpu/>`_.
     """
     if device_path:
       self._engine = BasicEnginePythonWrapper.CreateFromFile(
@@ -91,13 +91,20 @@ class BasicEngine(object):
     else:
       self._engine = BasicEnginePythonWrapper.CreateFromFile(model_path)
 
-  def run_inference(self, input):
+  def run_inference(self, input, size=None):
     """Performs inference with a raw input tensor.
 
     Args:
       input: (:obj:`numpy.ndarray`): A 1-D array as the input tensor. You can
         query the required size for this array with
         :func:`required_input_array_size`.
+      size (int): input buffer size. When size is not None, it will throw exception if
+        size does not match the expected input size, denoted by n. When size is None,
+        it will throw exception when total input buffer size is smaller than n, and only use
+        the first n bytes of the input buffer to set the input tensor, ignoring the remaining
+        bytes if any in the buffer. (This behavior allows callers to use input buffers with
+        padding bytes at the end, and have extra sanity check that the input matches the
+        model's expectation.)
 
     Returns:
       A 2-tuple with the inference latency in milliseconds (float) and a 1-D array
@@ -106,18 +113,26 @@ class BasicEngine(object):
       values [1, 2, 3] and [0.1, 0.4, 0.9], the returned 1-D array is [1, 2, 3, 0.1, 0.4, 0.9]. You
       can calculate the size and offset for each tensor using :func:`get_all_output_tensors_sizes`,
       :func:`get_num_of_output_tensors`, and :func:`get_output_tensor_size`.
+      Note that the inference result array is a reference, which needs to be deep copied if it
+      needs to be preserved before next inference call.
     """
-    #TODO(142164990): Add support for io.BytesIO heavily used on Raspberry Pi.
-    #TODO(142164990): Add benchmarks for all supported types to catch regressions.
+    expected_input_size = self.required_input_array_size()
+    if size:
+      assert size == expected_input_size, 'Wrong input size={}, expected={}.'.format(
+          size, expected_input_size)
     if isinstance(input, bytes):
+      assert len(input) >= expected_input_size
       result = self._engine.RunInferenceBytes(input)
     elif _is_valid_ctypes_input(input):
-      pointer, size = input
-      result = self._engine.RunInferenceRaw(pointer.value, size)
+      pointer, actual_size = input
+      assert actual_size >= expected_input_size
+      result = self._engine.RunInferenceRaw(pointer.value, expected_input_size)
     elif _libgst and isinstance(input, Gst.Buffer):
-      with _gst_buffer_map(input) as (pointer, size):
-        result = self._engine.RunInferenceRaw(pointer.value, size)
+      with _gst_buffer_map(input) as (pointer, actual_size):
+        assert actual_size >= expected_input_size
+        result = self._engine.RunInferenceRaw(pointer.value, expected_input_size)
     else:
+      assert len(input) >= expected_input_size
       result = self._engine.RunInference(input)
     latency = self._engine.get_inference_time()
     return (latency, result)
@@ -201,7 +216,7 @@ class BasicEngine(object):
     """Gets the path for the Edge TPU that's associated with this inference engine.
 
     See `how to run multiple models with multiple Edge TPUs
-    <https://coral.withgoogle.com/docs/edgetpu/multiple-edgetpu/>`_.
+    <https://coral.ai/docs/edgetpu/multiple-edgetpu/>`_.
 
     Returns:
       A string representing this engine's Edge TPU device path.

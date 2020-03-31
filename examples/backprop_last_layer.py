@@ -11,28 +11,37 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-r"""Demonstrates on-device last layer backprop with flowers dataset.
+r"""A demo for on-device backprop (transfer learning) of a classification model.
 
 This demo runs a similar task as described in TF Poets tutorial, except that
 learning happens on-device.
 https://codelabs.developers.google.com/codelabs/tensorflow-for-poets/#0
 
 Here are the steps:
-  *) mkdir -p /tmp/retrain/
-  *) curl http://download.tensorflow.org/example_images/flower_photos.tgz \
+  1) mkdir -p /tmp/retrain/
+
+  2) curl http://download.tensorflow.org/example_images/flower_photos.tgz \
        | tar xz -C /tmp/retrain
-  *) To start training, run the following in edgetpu/ directory
-     python3 examples/backprop_last_layer.py \
-       --data_dir /tmp/retrain/flower_photos \
-       --embedding_extractor_path \
-       test_data/mobilenet_v1_1.0_224_quant_embedding_extractor_edgetpu.tflite
+
+  3) Start training:
+
+      python3 backprop_last_layer.py \
+      --data_dir /tmp/retrain/flower_photos \
+      --embedding_extractor_path \
+      models/mobilenet_v1_1.0_224_quant_embedding_extractor_edgetpu.tflite
+
      Weights for retrained last layer will be saved to /tmp/retrain/output by
      default.
-  *) To use the model, run
-     python3 examples/classify_image.py \
-       --model /tmp/retrain/output/retrained_model_edgetpu.tflite \
-       --label /tmp/retrain/output/label_map.txt
-       --image [Image Path]
+
+  4) Run an inference with the new model:
+
+      python3 classify_image.py \
+      --model /tmp/retrain/output/retrained_model_edgetpu.tflite \
+      --label /tmp/retrain/output/label_map.txt
+      --image images/sunflower.bmp
+
+For more information, see
+https://coral.ai/docs/edgetpu/retrain-classification-ondevice-backprop/
 """
 
 import argparse

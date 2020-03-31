@@ -12,4 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = '2.13.0'
+import edgetpu.basic.edgetpu_utils as utils
+import sys
+
+__version__ = "2.14.0"
+
+expected=utils.SUPPORTED_RUNTIME_VERSION
+installed=utils.GetRuntimeVersion()
+if installed.find(expected) == -1:
+  print("[WARNING] requires runtime %s, but installed runtime has version %s. "
+        "It's not guaranteed that different versions of APIs and runtime "
+        "could work together properly." % (expected, installed),
+        file=sys.stderr)

@@ -146,7 +146,8 @@ TEST_P(ImprintingEngineTest,
       TestDatapoint(dog_train_0_, 1003, 0.99f),
       TestDatapoint(cat_test_0_, 1001, 0.99f),
       TestDatapoint(hotdog_test_0_, 1002, 0.95f),
-      TestDatapoint(dog_test_0_, 1003, 0.74f)};
+      // 203 soft-coated wheaten terrier
+      TestDatapoint(dog_test_0_, 203, 0.7f)};
   const std::string output_file_path =
       GenerateOutputModelPath("retrained_model_keep");
   OnlineTrainAndSave(training_datapoints, output_file_path);
@@ -168,7 +169,8 @@ TEST_P(ImprintingEngineTest,
       TestDatapoint(dog_train_0_, 1003, 0.99f),
       TestDatapoint(cat_test_0_, 1001, 0.99f),
       TestDatapoint(hotdog_test_0_, 1002, 0.95f),
-      TestDatapoint(dog_test_0_, 1003, 0.74f)};
+      // 203 soft-coated wheaten terrier
+      TestDatapoint(dog_test_0_, 203, 0.7f)};
   const std::string output_file_path =
       GenerateOutputModelPath("retrained_model_keep");
   OnlineTrain(training_datapoints);
@@ -177,9 +179,18 @@ TEST_P(ImprintingEngineTest,
 
 TEST_P(ImprintingEngineTest,
        TrainImprintedRetrainedMobileNetV1L2NormWithRealImagesNotKeepClasses) {
-  CreateImprintingEngine(GenerateInputModelPath("retrained_model_notkeep"),
-                         /*keep_classes=*/false);
+  CreateImprintingEngine(
+      GenerateInputModelPath("mobilenet_v1_1.0_224_l2norm_quant"),
+      /*keep_classes=*/false);
   const std::vector<TrainingDatapoint> training_datapoints = {
+      TrainingDatapoint({cat_train_0_}, 0),
+      TrainingDatapoint({hotdog_train_0_}, 1)};
+  const std::string output_file_path =
+      GenerateOutputModelPath("retrained_model_notkeep");
+  OnlineTrainAndSave(training_datapoints, output_file_path);
+
+  CreateImprintingEngine(output_file_path, /*keep_classes=*/false);
+  const std::vector<TrainingDatapoint> training_datapoints_new = {
       TrainingDatapoint({hotdog_train_0_}, 0),
       TrainingDatapoint({dog_train_0_}, 1)};
   const std::vector<TestDatapoint> test_datapoints = {
@@ -187,10 +198,10 @@ TEST_P(ImprintingEngineTest,
       TestDatapoint(dog_train_0_, 1, 0.99f),
       TestDatapoint(hotdog_test_0_, 0, 0.99f),
       TestDatapoint(dog_test_0_, 1, 0.99f)};
-  const std::string output_file_path =
+  const std::string output_file_path_new =
       GenerateOutputModelPath("retrained_imprinting_retrained_model_notkeep");
-  OnlineTrainAndSave(training_datapoints, output_file_path);
-  TestTrainedModel(test_datapoints, output_file_path);
+  OnlineTrainAndSave(training_datapoints_new, output_file_path_new);
+  TestTrainedModel(test_datapoints, output_file_path_new);
 }
 
 INSTANTIATE_TEST_CASE_P(ImprintingEngineTest, ImprintingEngineTest,

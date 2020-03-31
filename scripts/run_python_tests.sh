@@ -14,77 +14,59 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/prepare_test_env.sh"
+source "${SCRIPT_DIR}/setup_python_env.sh"
 
 function run_test {
-  if [[ "${TEST_TYPE}" == "installed" ]]; then
-    pushd /
-      MPLBACKEND=agg python3 -m unittest -v "${SCRIPT_DIR}/../tests/$1.py"
-    popd
-  else
-    env MPLBACKEND=agg LD_LIBRARY_PATH="${LD_LIBRARY_PATH}" PYTHONPATH="${SCRIPT_DIR}/.." \
-      `which ${PYTHON}` -m unittest -v tests.$1
-  fi
+  pushd /
+  MPLBACKEND=agg run_env python3 -m unittest -v "${SCRIPT_DIR}/../tests/$1.py"
+  popd
 }
 
-echo -e "${BLUE}Test Exceptions${DEFAULT}"
-run_test exception_test
+# Always run the following tests no matter how many Edge TPU devices are connected.
+echo -e "${BLUE}Version Test"
+echo -e "Checks runtime version.${DEFAULT}"
+run_test version_test
 
 echo -e "${BLUE}Unit test of BasicEngine"
 echo -e "Run unit test with BasicEngine. It will run inference on all models once.${DEFAULT}"
 run_test basic_engine_test
 
-echo -e "${BLUE}ClassificationEngine"
-echo -e "Now we'll run unit test of ClassificationEngine${DEFAULT}"
-run_test classification_engine_test
+# Run single Edge TPU tests.
+if [[ "${FILTER_TESTS_BY_EDGETPU_NUM}" == "n" ]] || [[ "${NUM_EDGETPUS}" -gt 0 ]]; then
+  echo -e "${BLUE}Test Exceptions${DEFAULT}"
+  run_test exception_test
 
-echo -e "${BLUE}Multiple Edge TPUs test${DEFAULT}"
-run_test multiple_tpus_test
+  echo -e "${BLUE}ClassificationEngine"
+  echo -e "Now we'll run unit test of ClassificationEngine${DEFAULT}"
+  run_test classification_engine_test
 
-echo -e "${BLUE}Edge TPU utils test${DEFAULT}"
-run_test edgetpu_utils_test
+  echo -e "${BLUE}Edge TPU utils test${DEFAULT}"
+  run_test edgetpu_utils_test
 
-echo -e "${BLUE}edgetpu_learn_utils_test${DEFAULT}"
-run_test edgetpu_learn_utils_test
+  echo -e "${BLUE}edgetpu_learn_utils_test${DEFAULT}"
+  run_test edgetpu_learn_utils_test
 
-echo -e "${BLUE}DetectionEngine"
-echo -e "Now we'll run unit test of DetectionEngine${DEFAULT}"
-run_test detection_engine_test
+  echo -e "${BLUE}DetectionEngine"
+  echo -e "Now we'll run unit test of DetectionEngine${DEFAULT}"
+  run_test detection_engine_test
 
-echo -e "${BLUE}COCO test for DetectionEngine"
-if [[ "${MACHINE}" == "x86_64" ]]; then
-  # Takes a long time.
-  echo -e "${YELLOW}This test will take long time.${DEFAULT}"
-  echo -e "${GREEN}Download dependent libraries.${DEFAULT}"
-  retry "sudo apt-get install -y libfreetype6-dev libpng-dev libqhull-dev libagg-dev python3-dev pkg-config"
-  python3 -m pip install matplotlib
-  python3 -m pip install cython
-  python3 -m pip install git+https://github.com/cocodataset/cocoapi#subdirectory=PythonAPI
+  echo -e "${BLUE}ImprintingEngine"
+  echo -e "Now we'll run unit test of ImprintingEngine${DEFAULT}"
+  run_test imprinting_engine_test
 
-  echo -e "${GREEN}Download coco data set.${DEFAULT}"
-  ${SCRIPT_DIR}/../test_data/download_coco_val_data.sh
-
-  echo -e "${GREEN}Start tests.${DEFAULT}"
-  run_test coco_object_detection_test
-else
-  echo -e "${YELLOW}Skip.${DEFAULT}"
+  echo -e "${BLUE}Evaluation for ImprintingEngine${DEFAULT}"
+  if [[ "${CPU}" == "x86_64" ]]; then
+    ${SCRIPT_DIR}/../test_data/download_oxford_17flowers.sh
+    run_test imprinting_evaluation_test
+  else
+    echo -e "${YELLOW}Skip.${DEFAULT}"
+  fi
 fi
 
-echo -e "${BLUE}ImprintingEngine"
-echo -e "Now we'll run unit test of ImprintingEngine${DEFAULT}"
-run_test imprinting_engine_test
-
-echo -e "${BLUE}Evaluation for ImprintingEngine${DEFAULT}"
-if [[ "${MACHINE}" == "x86_64" ]]; then
-  ${SCRIPT_DIR}/../test_data/download_oxford_17flowers.sh
-  run_test imprinting_evaluation_test
-else
-  echo -e "${YELLOW}Skip.${DEFAULT}"
+# Run multiple Edge TPU tests.
+if [[ "${FILTER_TESTS_BY_EDGETPU_NUM}" == "n" ]] || [[ "${NUM_EDGETPUS}" -gt 1 ]]; then
+  echo -e "${BLUE}Multiple Edge TPUs test${DEFAULT}"
+  run_test multiple_tpus_test
 fi
-
-echo -e "${BLUE}Cocompilation"
-echo -e "Now we'll run unit test of Cocompilation${DEFAULT}"
-run_test cocompilation_test
-
 
 echo -e "Tests finished!"

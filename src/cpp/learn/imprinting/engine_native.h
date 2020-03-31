@@ -51,9 +51,9 @@ class ImprintingEngineNative {
   // For input, we assume there is only one tensor with type uint8_t.
   // For output, we assume there is only one tensor representing the
   // classification results.
-  EdgeTpuApiStatus RunInference(const uint8_t* const input, const int in_size,
+  EdgeTpuApiStatus RunInference(const uint8_t* const input, size_t in_size,
                                 float const** const output,
-                                int* const out_size);
+                                size_t* const out_size);
 
   EdgeTpuApiStatus get_inference_time(float* const time) const;
 
@@ -69,7 +69,7 @@ class ImprintingEngineNative {
   // be under keep_classes mode.
   //
   // Call this function multiple times to train multiple different categories.
-  EdgeTpuApiStatus Train(const uint8_t* input, int dim1, int dim2,
+  EdgeTpuApiStatus Train(const uint8_t* input, size_t dim1, size_t dim2,
                          const int class_id);
 
   // Getter/setter for metadata, used in tests only.

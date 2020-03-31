@@ -52,7 +52,7 @@ GenerateQuantParamsForConv2d() {
 //    input_tensor
 //        |
 //        v
-//      Conv2d
+//     Conv2d/FC
 //        |
 //        v
 //    output_tensor
@@ -101,7 +101,7 @@ std::unique_ptr<tflite::ModelT> BuildTestGraph(
       GetGraphOutputTensors(model_t.get());
   CHECK_EQ(output_tensors.size(), 1);
   const tflite::TensorT* current_output_tensor = output_tensors[0];
-  std::vector<int> output_shape = internal::CalculateConv2dOutputShape(
+  std::vector<int> output_shape = internal::CalculateLinearLayerOutputShape(
       current_output_tensor->shape, kernel_shape);
   tensor_configs.push_back({"TestGraph/Conv2d/Kernel", tflite::TensorType_UINT8,
                             internal::TensorLocation::kParameter, kernel_shape,
@@ -113,15 +113,22 @@ std::unique_ptr<tflite::ModelT> BuildTestGraph(
                             internal::TensorLocation::kOutput, output_shape,
                             conv2d_output_quant.release()});
   int conv2d_op_index;
-  CHECK_EQ(AppendOperator(tensor_configs, tflite::BuiltinOperator_CONV_2D,
-                          model_t.get(), &conv2d_op_index, &reporter),
-           kEdgeTpuApiOk);
+  if (kernel_shape.size() == 2) {
+    CHECK_EQ(
+        AppendOperator(tensor_configs, tflite::BuiltinOperator_FULLY_CONNECTED,
+                       model_t.get(), &conv2d_op_index, &reporter),
+        kEdgeTpuApiOk);
+  } else {
+    CHECK_EQ(AppendOperator(tensor_configs, tflite::BuiltinOperator_CONV_2D,
+                            model_t.get(), &conv2d_op_index, &reporter),
+             kEdgeTpuApiOk);
+  }
 
   // Set kernel value.
   auto* kernel_quant = GetKernelQuant(model_t.get(), conv2d_op_index);
   const auto quant_kernel = Quantize<uint8_t>(kernel, kernel_quant->scale[0],
                                               kernel_quant->zero_point[0]);
-  internal::SetConv2dParams(quant_kernel, /*bias=*/{}, conv2d_op_index,
+  internal::SetLinearParams(quant_kernel, /*bias=*/{}, conv2d_op_index,
                             model_t.get());
   return model_t;
 }
@@ -177,13 +184,30 @@ std::unique_ptr<tflite::ModelT> LoadModel(const std::string& model_path) {
   return absl::WrapUnique<tflite::ModelT>(model->UnPack());
 }
 
-TEST(UtilsTest, BuildTestGraphAndRunInference) {
+TEST(UtilsTest, BuildConvTestGrapAndRunInference) {
   const std::vector<float> kernel = {
       1.0f, 1.0f, 1.0f, 1.0f, 1.0f,  // kernel 1
       1.0f, 2.0f, 3.0f, 4.0f, 5.0f,  // kernel 2
   };
   auto model_t = BuildTestGraph(/*input_shape=*/{1, 1, 1, 5},
                                 /*kernel_shape=*/{2, 1, 1, 5}, kernel);
+  EXPECT_EQ(model_t->subgraphs.size(), 1);
+  EXPECT_EQ(model_t->subgraphs[0]->operators.size(), 1);
+
+  const auto result = RunInference(
+      model_t.get(), /*input_tensor=*/{1.0f, 2.0f, 3.0f, 4.0f, 5.0f});
+  EXPECT_EQ(2, result.size());
+  EXPECT_NEAR(15.0f, result[0], 0.01);
+  EXPECT_NEAR(55.0f, result[1], 0.01);
+}
+
+TEST(UtilsTest, BuildFCTestGrapAndRunInference) {
+  const std::vector<float> kernel = {
+      1.0f, 1.0f, 1.0f, 1.0f, 1.0f,  // kernel 1
+      1.0f, 2.0f, 3.0f, 4.0f, 5.0f,  // kernel 2
+  };
+  auto model_t = BuildTestGraph(/*input_shape=*/{1, 5},
+                                /*kernel_shape=*/{2, 5}, kernel);
   EXPECT_EQ(model_t->subgraphs.size(), 1);
   EXPECT_EQ(model_t->subgraphs[0]->operators.size(), 1);
 
@@ -218,7 +242,7 @@ TEST(UtilsTest, AppendL2Norm) {
   EXPECT_NEAR(3 / std::sqrt(11.0f), result[2], 0.01);
 }
 
-TEST(UtilsTest, AppendFullyConnectedLayer) {
+TEST(UtilsTest, AppendConv2dLayer) {
   const std::vector<float> kernel = {
       1.0f,  1.0f,  1.0f,  1.0f,  1.0f,   // kernel 1
       -1.0f, -1.0f, -1.0f, -1.0f, -1.0f,  // kernel 2
@@ -230,8 +254,52 @@ TEST(UtilsTest, AppendFullyConnectedLayer) {
   ASSERT_EQ(kEdgeTpuApiOk,
             internal::AppendL2Norm(model_t.get(), &op_index, &error_reporter));
   ASSERT_EQ(kEdgeTpuApiOk,
-            internal::AppendFullyConnectedLayer(
+            internal::AppendLinearLayer(
                 /*kernel_shape=*/{4, 1, 1, 2}, GenerateQuantParamsForConv2d(),
+                model_t.get(), &op_index, &error_reporter));
+  ASSERT_EQ(2, op_index);
+  // Set weights for fully-connected layer.
+  const std::vector<float>& fc_weights = {
+      std::sqrt(2.0f) / 2, -std::sqrt(2.0f) / 2,  // kernel 1
+      std::sqrt(2.0f) / 2, std::sqrt(2.0f) / 2,   // kernel 2
+      std::sqrt(7.0f) / 4, 3.0f / 4,              // kernel 3
+      std::sqrt(5.0f) / 3, 2.0f / 3,              // kernel 4
+  };
+
+  auto* conv_weights_quant = GetKernelQuant(model_t.get(), op_index);
+  const auto quant_conv_weights =
+      Quantize<uint8_t>(fc_weights, conv_weights_quant->scale[0],
+                        conv_weights_quant->zero_point[0]);
+  internal::SetLinearParams(quant_conv_weights, /*bias=*/{}, op_index,
+                            model_t.get());
+  EXPECT_EQ(model_t->subgraphs[0]->operators.size(), 3);
+
+  const auto result = RunInference(
+      model_t.get(), /*input_tensor=*/{1.0f, 2.0f, 3.0f, 4.0f, 5.0f});
+  // output tensor of L2Norm layer is [sqrt(2)/2, -sqrt(2)/2], with above
+  // `fc_weights`, result is expected to be:
+  // [1, 0, (sqrt(14)-sqrt(18))/8, (sqrt(10)-sqrt(8))/6]
+  EXPECT_EQ(4, result.size());
+  EXPECT_NEAR(1.0f, result[0], 0.01);
+  EXPECT_NEAR(0.0f, result[1], 0.01);
+  EXPECT_NEAR((std::sqrt(14.0f) - std::sqrt(18.0f)) / 8, result[2], 0.01);
+  EXPECT_NEAR((std::sqrt(10.0f) - std::sqrt(8.0f)) / 6, result[3], 0.01);
+}
+
+TEST(UtilsTest, AppendFullyConnectedLayer) {
+  const std::vector<float> kernel = {
+      1.0f,  1.0f,  1.0f,  1.0f,  1.0f,   // kernel 1
+      -1.0f, -1.0f, -1.0f, -1.0f, -1.0f,  // kernel 2
+  };
+  auto model_t = BuildTestGraph(/*input_shape=*/{1, 5},
+                                /*kernel_shape=*/{2, 5}, kernel);
+  EdgeTpuErrorReporter error_reporter;
+  int op_index;
+  ASSERT_EQ(kEdgeTpuApiOk,
+            internal::AppendL2Norm(model_t.get(), &op_index, &error_reporter));
+  ASSERT_EQ(kEdgeTpuApiOk,
+            internal::AppendLinearLayer(
+                /*kernel_shape=*/{4, 2}, GenerateQuantParamsForConv2d(),
                 model_t.get(), &op_index, &error_reporter));
   ASSERT_EQ(2, op_index);
   // Set weights for fully-connected layer.
@@ -245,7 +313,7 @@ TEST(UtilsTest, AppendFullyConnectedLayer) {
   auto* fc_weights_quant = GetKernelQuant(model_t.get(), op_index);
   const auto quant_fc_weights = Quantize<uint8_t>(
       fc_weights, fc_weights_quant->scale[0], fc_weights_quant->zero_point[0]);
-  internal::SetConv2dParams(quant_fc_weights, /*bias=*/{}, op_index,
+  internal::SetLinearParams(quant_fc_weights, /*bias=*/{}, op_index,
                             model_t.get());
   EXPECT_EQ(model_t->subgraphs[0]->operators.size(), 3);
 
@@ -273,26 +341,27 @@ TEST(UtilsTest, AppendReshape) {
   ASSERT_EQ(kEdgeTpuApiOk,
             internal::AppendL2Norm(model_t.get(), &op_index, &error_reporter));
   ASSERT_EQ(kEdgeTpuApiOk,
-            internal::AppendFullyConnectedLayer(
+            internal::AppendLinearLayer(
                 /*kernel_shape=*/{4, 1, 1, 2}, GenerateQuantParamsForConv2d(),
                 model_t.get(), &op_index, &error_reporter));
-  const auto fc_op_index = op_index;
+  const auto conv_op_index = op_index;
   ASSERT_EQ(kEdgeTpuApiOk,
             internal::AppendReshape(model_t.get(), &op_index, &error_reporter));
   ASSERT_EQ(3, op_index);
 
   // Set weights for fully-connected layer.
-  const std::vector<float>& fc_weights = {
+  const std::vector<float>& conv_weights = {
       std::sqrt(2.0f) / 2, -std::sqrt(2.0f) / 2,  // kernel 1
       std::sqrt(2.0f) / 2, std::sqrt(2.0f) / 2,   // kernel 2
       std::sqrt(7.0f) / 4, 3.0f / 4,              // kernel 3
       std::sqrt(5.0f) / 3, 2.0f / 3,              // kernel 4
   };
 
-  auto* fc_weights_quant = GetKernelQuant(model_t.get(), fc_op_index);
-  const auto quant_fc_weights = Quantize<uint8_t>(
-      fc_weights, fc_weights_quant->scale[0], fc_weights_quant->zero_point[0]);
-  internal::SetConv2dParams(quant_fc_weights, /*bias=*/{}, fc_op_index,
+  auto* conv_weights_quant = GetKernelQuant(model_t.get(), conv_op_index);
+  const auto quant_conv_weights =
+      Quantize<uint8_t>(conv_weights, conv_weights_quant->scale[0],
+                        conv_weights_quant->zero_point[0]);
+  internal::SetLinearParams(quant_conv_weights, /*bias=*/{}, conv_op_index,
                             model_t.get());
 
   ASSERT_EQ(model_t->subgraphs[0]->operators.size(), 4);
@@ -329,7 +398,7 @@ TEST(UtilsTest, AppendSoftmax) {
   ASSERT_EQ(kEdgeTpuApiOk,
             internal::AppendL2Norm(model_t.get(), &op_index, &error_reporter));
   ASSERT_EQ(kEdgeTpuApiOk,
-            internal::AppendFullyConnectedLayer(
+            internal::AppendLinearLayer(
                 /*kernel_shape=*/{4, 1, 1, 2}, GenerateQuantParamsForConv2d(),
                 model_t.get(), &op_index, &error_reporter));
   const auto fc_op_index = op_index;
@@ -350,7 +419,7 @@ TEST(UtilsTest, AppendSoftmax) {
   auto* fc_weights_quant = GetKernelQuant(model_t.get(), fc_op_index);
   const auto quant_fc_weights = Quantize<uint8_t>(
       fc_weights, fc_weights_quant->scale[0], fc_weights_quant->zero_point[0]);
-  internal::SetConv2dParams(quant_fc_weights, /*bias=*/{}, fc_op_index,
+  internal::SetLinearParams(quant_fc_weights, /*bias=*/{}, fc_op_index,
                             model_t.get());
 
   EXPECT_EQ(model_t->subgraphs[0]->operators.size(), 5);
@@ -433,86 +502,11 @@ TEST(UtilsTest, FindSingleOperatorWithInput) {
   EXPECT_EQ(-1, nonexist_op_index);
 }
 
-TEST(UtilsTest, AppendFullyConnectedAndSoftmaxLayerToModel) {
-  const std::string& in_model_path = TestDataPath(
-      "mobilenet_v1_1.0_224_quant_embedding_extractor_edgetpu.tflite");
-  const std::string out_model_path = "/tmp/retrained_model_edgetpu.tflite";
-
-  BasicEngine in_model_engine(in_model_path);
-  const auto& input_tensor_shape = in_model_engine.get_input_tensor_shape();
-  std::vector<uint8_t> random_input = GetRandomInput(
-      input_tensor_shape[1] * input_tensor_shape[2] * input_tensor_shape[3]);
-  const auto& in_model_results = in_model_engine.RunInference(random_input);
-  ASSERT_EQ(1, in_model_results.size());
-  const auto& in_model_result = in_model_results[0];
-
-  const int embedding_vector_dim =
-      in_model_engine.get_all_output_tensors_sizes()[0];
-  float embedding_vector_sum = 0.0f;
-  for (int i = 0; i < embedding_vector_dim; ++i) {
-    embedding_vector_sum += in_model_result[i];
-  }
-  // Generates dummy weights, of dimension embedding_vector_dim x 3. Each kernel
-  // has the following pattern (times a scalar to make max logits score = 1) :
-  // Kernel 1: 1, 1, 1, ...
-  // Kernel 2: 2, 2, 2, ...
-  // kernel 3: 3, 3, 3, ...
-  std::vector<float> weights(embedding_vector_dim * 3);
-  const float scalar = 1 / (embedding_vector_sum * 3);
-  std::fill(weights.begin(), weights.begin() + embedding_vector_dim, scalar);
-  std::fill(weights.begin() + embedding_vector_dim,
-            weights.begin() + embedding_vector_dim * 2, scalar * 2);
-  std::fill(weights.begin() + embedding_vector_dim * 2,
-            weights.begin() + embedding_vector_dim * 3, scalar * 3);
-  std::vector<float> biases(3, 0.0f);
-
-  std::vector<float> expected_fc_output = {embedding_vector_sum * scalar,
-                                           embedding_vector_sum * scalar * 2,
-                                           embedding_vector_sum * scalar * 3};
-  const float out_tensor_min =
-      *std::min_element(expected_fc_output.begin(), expected_fc_output.end());
-  const float out_tensor_max =
-      *std::max_element(expected_fc_output.begin(), expected_fc_output.end());
-
-  EdgeTpuErrorReporter reporter;
-  ASSERT_EQ(AppendFullyConnectedAndSoftmaxLayerToModel(
-                in_model_path, out_model_path, weights.data(), weights.size(),
-                biases.data(), biases.size(), out_tensor_min, out_tensor_max,
-                &reporter),
-            kEdgeTpuApiOk);
-
-  BasicEngine out_model_engine(out_model_path);
-  const auto& out_model_results = out_model_engine.RunInference(random_input);
-  ASSERT_EQ(1, out_model_results.size());
-  const auto& out_model_result = out_model_results[0];
-
-  // Calculate expected value.
-  std::vector<float> expected = expected_fc_output;
-  float max_score = *std::max_element(expected.begin(), expected.end());
-  // Subtract max_score to avoid overflow.
-  for (auto& e : expected) {
-    e -= max_score;
-  }
-  float exp_sum = 0.0;
-  for (auto& e : expected) {
-    e = std::exp(e);
-    exp_sum += e;
-  }
-  for (auto& e : expected) {
-    e /= exp_sum;
-  }
-
-  ASSERT_EQ(3, out_model_result.size());
-  const float tol = 5e-3;
-  for (int i = 0; i < expected.size(); ++i) {
-    EXPECT_NEAR(expected[i], out_model_result[i], tol);
-  }
-}
-
 TEST(UtilsTest,
      AppendFullyConnectedAndSoftmaxLayerToModelInvalidInputFilePath) {
   const std::string& in_model_path = TestDataPath("invalid_path.tflite");
-  const std::string out_model_path = "/tmp/retrained_model_edgetpu.tflite";
+  const std::string out_model_path =
+      coral::GetTempPrefix() + "/retrained_model_edgetpu.tflite";
 
   const int embedding_vector_dim = 1024;
   std::vector<float> weights(embedding_vector_dim * 3, 0.0f);
@@ -530,6 +524,109 @@ TEST(UtilsTest,
       absl::Substitute("Failed to open file: $0", in_model_path);
   EXPECT_EQ(reporter.message(), expected_message);
 }
+
+class UtilsRealModelTest : public ::testing::TestWithParam<bool> {
+ protected:
+  void SetUp() override { tpu_tflite_ = GetParam(); }
+
+  std::string GenerateModelPath(const std::string& file_name) {
+    return tpu_tflite_ ? file_name + "_edgetpu.tflite" : file_name + ".tflite";
+  }
+
+  bool tpu_tflite_ = false;
+  std::string input_model_name_;
+
+  void TestAppendFullyConnectedAndSoftmaxLayerToModel(
+      const std::string& in_model_path, const std::string& out_model_path) {
+    BasicEngine in_model_engine(in_model_path);
+    const auto& input_tensor_shape = in_model_engine.get_input_tensor_shape();
+    std::vector<uint8_t> random_input = GetRandomInput(
+        input_tensor_shape[1] * input_tensor_shape[2] * input_tensor_shape[3]);
+    const auto& in_model_results = in_model_engine.RunInference(random_input);
+    ASSERT_EQ(1, in_model_results.size());
+    const auto& in_model_result = in_model_results[0];
+
+    const int embedding_vector_dim =
+        in_model_engine.get_all_output_tensors_sizes()[0];
+    float embedding_vector_sum = 0.0f;
+    for (int i = 0; i < embedding_vector_dim; ++i) {
+      embedding_vector_sum += in_model_result[i];
+    }
+    // Generates dummy weights, of dimension embedding_vector_dim x 3. Each
+    // kernel has the following pattern (times a scalar to make max logits score
+    // = 1) : Kernel 1: 1, 1, 1, ... Kernel 2: 2, 2, 2, ... kernel 3: 3, 3, 3,
+    // ...
+    std::vector<float> weights(embedding_vector_dim * 3);
+    const float scalar = 1 / (embedding_vector_sum * 3);
+    std::fill(weights.begin(), weights.begin() + embedding_vector_dim, scalar);
+    std::fill(weights.begin() + embedding_vector_dim,
+              weights.begin() + embedding_vector_dim * 2, scalar * 2);
+    std::fill(weights.begin() + embedding_vector_dim * 2,
+              weights.begin() + embedding_vector_dim * 3, scalar * 3);
+    std::vector<float> biases(3, 0.0f);
+
+    std::vector<float> expected_fc_output = {embedding_vector_sum * scalar,
+                                             embedding_vector_sum * scalar * 2,
+                                             embedding_vector_sum * scalar * 3};
+    const float out_tensor_min =
+        *std::min_element(expected_fc_output.begin(), expected_fc_output.end());
+    const float out_tensor_max =
+        *std::max_element(expected_fc_output.begin(), expected_fc_output.end());
+
+    EdgeTpuErrorReporter reporter;
+    ASSERT_EQ(AppendFullyConnectedAndSoftmaxLayerToModel(
+                  in_model_path, out_model_path, weights.data(), weights.size(),
+                  biases.data(), biases.size(), out_tensor_min, out_tensor_max,
+                  &reporter),
+              kEdgeTpuApiOk);
+
+    BasicEngine out_model_engine(out_model_path);
+    const auto& out_model_results = out_model_engine.RunInference(random_input);
+    ASSERT_EQ(1, out_model_results.size());
+    const auto& out_model_result = out_model_results[0];
+
+    // Calculate expected value.
+    std::vector<float> expected = expected_fc_output;
+    float max_score = *std::max_element(expected.begin(), expected.end());
+    // Subtract max_score to avoid overflow.
+    for (auto& e : expected) {
+      e -= max_score;
+    }
+    float exp_sum = 0.0;
+    for (auto& e : expected) {
+      e = std::exp(e);
+      exp_sum += e;
+    }
+    for (auto& e : expected) {
+      e /= exp_sum;
+    }
+
+    ASSERT_EQ(3, out_model_result.size());
+    const float tol = 5e-3;
+    for (int i = 0; i < expected.size(); ++i) {
+      EXPECT_NEAR(expected[i], out_model_result[i], tol);
+    }
+  }
+};
+
+TEST_P(UtilsRealModelTest, AppendConv2dAndSoftmaxLayerToModel) {
+  const std::string& in_model_path = TestDataPath(
+      GenerateModelPath("mobilenet_v1_1.0_224_quant_embedding_extractor"));
+  const std::string out_model_path =
+      coral::GetTempPrefix() + "/" + GenerateModelPath("retrained_conv_model");
+  TestAppendFullyConnectedAndSoftmaxLayerToModel(in_model_path, out_model_path);
+}
+
+TEST_P(UtilsRealModelTest, AppendFullyConnectedAndSoftmaxLayerToModel) {
+  const std::string& in_model_path = TestDataPath(
+      GenerateModelPath("efficientnet-edgetpu-S_quant_embedding_extractor"));
+  const std::string out_model_path =
+      coral::GetTempPrefix() + "/" + GenerateModelPath("retrained_fc_model");
+  TestAppendFullyConnectedAndSoftmaxLayerToModel(in_model_path, out_model_path);
+}
+
+INSTANTIATE_TEST_CASE_P(UtilsRealModelTest, UtilsRealModelTest,
+                        ::testing::Values(false, true));
 
 }  // namespace
 }  // namespace learn

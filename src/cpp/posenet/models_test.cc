@@ -41,11 +41,15 @@ void TestPoseNetDecoder(
     EXPECT_GT(pose_scores[i], expected_pose_score);
     for (int k = 0; k < 17; k++) {
       if (expected_poses[i][k].score > 0.5) {
-        EXPECT_NEAR(expected_poses[i][k].y, poses[i * 17 * 2 + 2 * k], 5);
-        EXPECT_NEAR(expected_poses[i][k].x, poses[i * 17 * 2 + 2 * k + 1],
-                    5 /*within 5 pixels*/);
+        // Expect scores to be close to the expected.
         EXPECT_NEAR(expected_poses[i][k].score, keypoint_scores[i * 17 + k],
                     0.05);
+        // Compare positions only for points above a threshold score
+        if (expected_poses[i][k].score > 0.1) {
+          EXPECT_NEAR(expected_poses[i][k].y, poses[i * 17 * 2 + 2 * k], 3);
+          EXPECT_NEAR(expected_poses[i][k].x, poses[i * 17 * 2 + 2 * k + 1],
+                      3 /*within 3 pixels*/);
+        }
       }
     }
   }
@@ -73,8 +77,8 @@ TEST(PosenetModelCorrectnessTest, TestPoseNetWithDecoder_353_481) {
              Keypoint(127, 255, 0.993), Keypoint(153, 300, 0.988),
              Keypoint(161, 245, 0.955), Keypoint(182, 309, 0.977),
              Keypoint(193, 233, 0.515), Keypoint(192, 285, 0.989),
-             Keypoint(193, 258, 0.984), Keypoint(237, 282, 0.917),
-             Keypoint(239, 272, 0.611), Keypoint(314, 286, 0.008),
+             Keypoint(193, 258, 0.984), Keypoint(237, 282, 0.919),
+             Keypoint(239, 270, 0.611), Keypoint(314, 286, 0.008),
              Keypoint(303, 288, 0.023)}})});
   TestPoseNetDecoder("posenet_mobilenet_v1_075_353_481_quant_decoder.tflite",
                      expected_poses, 0.70);
@@ -121,8 +125,8 @@ TEST(PosenetModelCorrectnessTest, TestPoseNetWithDecoder_721_1281) {
              Keypoint(194, 495, 0.995), Keypoint(245, 568, 0.991),
              Keypoint(266, 450, 0.987), Keypoint(321, 592, 0.965),
              Keypoint(349, 427, 0.953), Keypoint(394, 608, 0.208),
-             Keypoint(444, 410, 0.003), Keypoint(397, 564, 0.616),
-             Keypoint(397, 486, 0.545), Keypoint(563, 630, 0.002),
+             Keypoint(444, 410, 0.003), Keypoint(409, 564, 0.616),
+             Keypoint(411, 486, 0.545), Keypoint(563, 630, 0.002),
              Keypoint(617, 421, 0.002), Keypoint(670, 651, 0.002),
              Keypoint(676, 425, 0.002)}}),
        std::array<Keypoint, 17>(

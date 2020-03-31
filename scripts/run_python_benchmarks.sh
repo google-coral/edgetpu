@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/prepare_test_env.sh"
+source "${SCRIPT_DIR}/setup_python_env.sh"
 
 BENCHMARK_OPTIONS= # Empty by default
 if [[ -f /etc/mendel_version ]] && [[ "${RUNTIME_PERF}" == "direct" ]]; then
@@ -24,40 +24,31 @@ fi
 disable_cpu_scaling
 
 function run_benchmark {
-  if [[ "${TEST_TYPE}" == "installed" ]]; then
-    pushd /tmp
-      python3 "${SCRIPT_DIR}/../benchmarks/$1.py" ${BENCHMARK_OPTIONS}
-    popd
-  else
-    env LD_LIBRARY_PATH="${LD_LIBRARY_PATH}" PYTHONPATH="${SCRIPT_DIR}/.." \
-      `which ${PYTHON}` "${SCRIPT_DIR}/../benchmarks/$1.py" ${BENCHMARK_OPTIONS}
-  fi
+  pushd /tmp
+  run_env python3 "${SCRIPT_DIR}/../benchmarks/$1.py" ${BENCHMARK_OPTIONS}
+  popd
 }
 
-echo -e "${BLUE}Benchmark of BasicEngine"
-echo -e "Benchmark all supported models with BasicEngine.${DEFAULT}"
-echo -e "${YELLOW}This test will take long time.${DEFAULT}"
-run_benchmark basic_engine_benchmarks
+# Run single Edge TPU benchmarks.
+if [[ "${FILTER_TESTS_BY_EDGETPU_NUM}" == "n" ]] || [[ "${NUM_EDGETPUS}" -gt 0 ]]; then
+  echo -e "${BLUE}Benchmark of BasicEngine"
+  echo -e "Benchmark all supported models with BasicEngine.${DEFAULT}"
+  echo -e "${YELLOW}This test will take long time.${DEFAULT}"
+  run_benchmark basic_engine_benchmarks
 
-echo -e "${BLUE}Benchmark for ClassificationEngine"
-echo -e "Benchmark all classification models with different image size.${DEFAULT}"
-echo -e "${YELLOW}This test will take long time.${DEFAULT}"
-run_benchmark classification_benchmarks
+  echo -e "${BLUE}Benchmark for ClassificationEngine"
+  echo -e "Benchmark all classification models with different image size.${DEFAULT}"
+  echo -e "${YELLOW}This test will take long time.${DEFAULT}"
+  run_benchmark classification_benchmarks
 
-echo -e "${BLUE}Benchmark for DetectionEngine"
-echo -e "Benchmark all detection models with different image size.${DEFAULT}"
-echo -e "${YELLOW}This test will take long time.${DEFAULT}"
-run_benchmark detection_benchmarks
+  echo -e "${BLUE}Benchmark for ImprintingEngine"
+  echo -e "Benchmark speed of transfer learning with Imprinting Engine.${DEFAULT}"
+  echo -e "${YELLOW}This test will take long time.${DEFAULT}"
+  run_benchmark imprinting_benchmarks
 
-echo -e "${BLUE}Benchmark for ImprintingEngine"
-echo -e "Benchmark speed of transfer learning with Imprinting Engine.${DEFAULT}"
-echo -e "${YELLOW}This test will take long time.${DEFAULT}"
-${SCRIPT_DIR}/../test_data/download_imprinting_test_data.sh
-run_benchmark imprinting_benchmarks
-
-echo -e "${BLUE}Benchmark for Cocompilation"
-echo -e "Benchmark speed of cocompilation models.${DEFAULT}"
-echo -e "${YELLOW}This test will take long time.${DEFAULT}"
-run_benchmark cocompilation_benchmarks
+  echo -e "${BLUE}Benchmark for SoftmaxRegression"
+  echo -e "Benchmark speed of softmax regression backprop engine.${DEFAULT}"
+  run_benchmark softmax_regression_benchmarks
+fi
 
 echo -e "Benchmarks finished!"

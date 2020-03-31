@@ -22,4 +22,4 @@ readonly CMD="make deb deb-armhf deb-arm64 wheel && mkdir -p dist && mv -f ../*.
 
 "${SCRIPT_DIR}/build_swig.sh"
 
-make DOCKER_SHELL_COMMAND="/bin/bash -c '${CMD}'" -f "${MAKEFILE}" docker-shell
+make DOCKER_SHELL_COMMAND="${CMD}" -f "${MAKEFILE}" docker-shell

@@ -17,7 +17,6 @@
 import collections
 import contextlib
 import os
-import tempfile
 import unittest
 
 from edgetpu.basic.basic_engine import BasicEngine
@@ -111,31 +110,31 @@ class ImprintingEngineEvaluationTest(unittest.TestCase):
     imprinting_engine = ImprintingEngine(model_path, keep_classes)
     imprinting_engine.train_all(train_input)
     print('----------------     Training finished   -----------------')
-    output_model_path = tempfile.NamedTemporaryFile(suffix='.tflite')
-    imprinting_engine.save_model(output_model_path.name)
+    with test_utils.TemporaryFile(suffix='.tflite') as output_model_path:
+      imprinting_engine.save_model(output_model_path.name)
 
-    # Evaluate
-    print('----------------     Start evaluating    -----------------')
-    classification_engine = ClassificationEngine(output_model_path.name)
-    # top[i] represents number of top (i+1) correct inference.
-    top_k_correct_count = [0] * top_k_range
-    image_num = 0
-    for category, image_list in test_set.items():
-      n = len(image_list)
-      print('Evaluating {} ({} images)'.format(category, n))
-      for image_name in image_list:
-        with test_image(os.path.join(dataset_path, category, image_name)) as raw_image:
-          # Set threshold as a negative number to ensure we get top k candidates
-          # even if its score is 0.
-          candidates = classification_engine.classify_with_image(
-              raw_image, threshold=-0.1, top_k=top_k_range)
-          for i in range(len(candidates)):
-            if candidates[i][0] in labels_map and labels_map[candidates[i][0]] == category:
-              top_k_correct_count[i] += 1
-              break
-      image_num += n
-    for i in range(1, top_k_range):
-      top_k_correct_count[i] += top_k_correct_count[i-1]
+      # Evaluate
+      print('----------------     Start evaluating    -----------------')
+      classification_engine = ClassificationEngine(output_model_path.name)
+      # top[i] represents number of top (i+1) correct inference.
+      top_k_correct_count = [0] * top_k_range
+      image_num = 0
+      for category, image_list in test_set.items():
+        n = len(image_list)
+        print('Evaluating {} ({} images)'.format(category, n))
+        for image_name in image_list:
+          with test_image(os.path.join(dataset_path, category, image_name)) as raw_image:
+            # Set threshold as a negative number to ensure we get top k candidates
+            # even if its score is 0.
+            candidates = classification_engine.classify_with_image(
+                raw_image, threshold=-0.1, top_k=top_k_range)
+            for i in range(len(candidates)):
+              if candidates[i][0] in labels_map and labels_map[candidates[i][0]] == category:
+                top_k_correct_count[i] += 1
+                break
+        image_num += n
+      for i in range(1, top_k_range):
+        top_k_correct_count[i] += top_k_correct_count[i-1]
 
     return [top_k_correct_count[i] / image_num for i in range(top_k_range)]
 
@@ -154,7 +153,7 @@ class ImprintingEngineEvaluationTest(unittest.TestCase):
   # Evaluate with L2Norm full model, not keeping base model classes.
   def test_oxford17_flowers_l2_norm_model_not_keep_classes(self):
     self._test_oxford17_flowers_single(
-        'imprinting/mobilenet_v1_1.0_224_l2norm_quant.tflite',
+        'mobilenet_v1_1.0_224_l2norm_quant.tflite',
         keep_classes=False,
         expected=[0.86, 0.94, 0.96, 0.97, 0.97]
     )
@@ -162,7 +161,7 @@ class ImprintingEngineEvaluationTest(unittest.TestCase):
   # Evaluate with L2Norm full model, keeping base model classes.
   def test_oxford17_flowers_l2_norm_model_keep_classes(self):
     self._test_oxford17_flowers_single(
-        'imprinting/mobilenet_v1_1.0_224_l2norm_quant.tflite',
+        'mobilenet_v1_1.0_224_l2norm_quant.tflite',
         keep_classes=True,
         expected=[0.86, 0.94, 0.96, 0.96, 0.97]
     )

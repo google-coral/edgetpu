@@ -27,20 +27,21 @@ inline float L2Norm(const std::vector<float>& embedding) {
   return std::sqrt(SquaredSum(embedding));
 }
 
-// NOTE: all of the following AppendXXX functions are tuned for imprinting
-// method, especially quantization parameters. You should adapt the
+// NOTE: all of the following AppendXXX functions are tuned for last layer
+// backprop method, especially quantization parameters. You should adapt the
 // implementation accordingly if used in other cases.
 
 // Appends L2Normalization. Returns index of the L2Norm operator in subgraph.
 EdgeTpuApiStatus AppendL2Norm(tflite::ModelT* model_t, int* new_op_index,
                               EdgeTpuErrorReporter* reporter);
 
-// Appends FC layer. This is done by appending a Conv2d with 1x1 kernel.
-// Returns index of the Conv2d operator in subgraph.
+// Appends Conv2d / FC layer. Returns index of the Conv2d / FC operator in
+// subgraph. It distinguishes the two operatos using the size of kernel_shape,
+// where size of 4 indicates a Conv while size of 2 indicates a FC.
 //
 // |quant_params| contains the quantization parameters for kernel weights,
 // biases and output tensor.
-EdgeTpuApiStatus AppendFullyConnectedLayer(
+EdgeTpuApiStatus AppendLinearLayer(
     const std::vector<int>& kernel_shape,
     std::vector<std::unique_ptr<tflite::QuantizationParametersT>> quant_params,
     tflite::ModelT* model_t, int* new_op_index, EdgeTpuErrorReporter* reporter);
@@ -101,19 +102,20 @@ EdgeTpuApiStatus AppendOperator(const std::vector<TensorConfig>& tensor_configs,
                                 tflite::ModelT* model_t, int* new_op_index,
                                 EdgeTpuErrorReporter* reporter);
 
-// Sets Conv2d's parameters, i.e., kernel and bias.
+// Sets Conv2d / FC parameters, i.e., kernel and bias.
 // Bias will be set to zeros if `bias` is set to empty.
 //
 // Note on weights data ordering.
 // "Typical TF Lite weights are [filter_count, filter_height, filter_width,
 // input_depth]". See comments inside `AllocateTemporaryTensorsIfRequired` in
 // //depot/google3/third_party/tensorflow/lite/kernels/conv.cc
-void SetConv2dParams(const std::vector<uint8_t>& kernel,
+void SetLinearParams(const std::vector<uint8_t>& kernel,
                      const std::vector<int32_t>& bias, int op_index,
                      tflite::ModelT* model_t);
 
-// Calculates conv2d shape, given shape of input tensor and kernel tensor.
-std::vector<int> CalculateConv2dOutputShape(
+// Calculates the shape of conv/fc's output, given shape of input tensor and
+// kernel tensor.
+std::vector<int> CalculateLinearLayerOutputShape(
     const std::vector<int>& input_shape, const std::vector<int>& kernel_shape);
 
 }  // namespace internal
@@ -287,13 +289,16 @@ std::unique_ptr<flatbuffers::FlatBufferBuilder> GetFlatBufferBuilder(
 //   1) Read tflite model from |in_model_path| as input;
 //        input model is assumed to be an embedding extractor, e.g., a
 //        classification model without the last FC+Softmax layer.
-//   2) Append (learned) weights and biases as a FC layer to input model;
-//   3) Append softmax layer after the FC layer;
+//   2) Append (learned) weights and biases as a FC/Conv layer to input modell
+//        the appended operator is decided by the output shape of tflite model.
+//        If the output is a 2D tensor, FC would be appended, otherwise Conv
+//        would be appended.
+//   3) Append softmax layer after the FC/Conv layer;
 //   4) Save tflite model to |out_model_path|;
 EdgeTpuApiStatus AppendFullyConnectedAndSoftmaxLayerToModel(
     const std::string& in_model_path, const std::string& out_model_path,
-    const float* weights, int weights_size, const float* biases,
-    int biases_size, float out_tensor_min, float out_tensor_max,
+    const float* weights, size_t weights_size, const float* biases,
+    size_t biases_size, float out_tensor_min, float out_tensor_max,
     EdgeTpuErrorReporter* reporter);
 
 }  // namespace learn

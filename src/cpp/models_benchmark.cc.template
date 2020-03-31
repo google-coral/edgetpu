@@ -1,0 +1,17 @@
+#include "src/cpp/test_utils.h"
+#include "benchmark/benchmark.h"
+
+namespace coral {
+
+template <coral::CnnProcessorType CnnProcessor>
+static void {BENCHMARK_NAME}(benchmark::State& state) {
+  const std::string model_path =
+      coral::TestDataPath((CnnProcessor == coral::kEdgeTpu)
+                              ? "{TFLITE_EDGETPU_FILEPATH}"
+                              : "{TFLITE_CPU_FILEPATH}");
+  coral::BenchmarkModelOnEdgeTpu(model_path, state);
+}
+BENCHMARK_TEMPLATE({BENCHMARK_NAME}, coral::kEdgeTpu);
+BENCHMARK_TEMPLATE({BENCHMARK_NAME}, coral::kCpu);
+
+}  // namespace coral

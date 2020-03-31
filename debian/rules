@@ -13,6 +13,7 @@ LIB_DEV := debian/libedgetpu-dev/usr/lib/$(DEB_HOST_GNU_TYPE)
 LIB_STD := debian/libedgetpu1-std/usr/lib/$(DEB_HOST_GNU_TYPE)
 LIB_MAX := debian/libedgetpu1-max/usr/lib/$(DEB_HOST_GNU_TYPE)
 COMPILER_BIN := debian/edgetpu-compiler/usr/bin
+COMPILER_ARCH := none
 
 export PYBUILD_NAME=edgetpu
 
@@ -21,7 +22,6 @@ ifeq ($(DEB_TARGET_ARCH),armhf)
   CPU := armv7a
 else ifeq ($(DEB_TARGET_ARCH),arm64)
   export PYBUILD_AFTER_INSTALL=rm -f $(SWIG_ARMHF) $(SWIG_AMD64)
-  COMPILER_ARCH := aarch64
   CPU := aarch64
 else ifeq ($(DEB_TARGET_ARCH),amd64)
   export PYBUILD_AFTER_INSTALL=rm -f $(SWIG_ARMHF) $(SWIG_ARM64)
@@ -47,9 +47,14 @@ override_dh_auto_install:
 	cp -f libedgetpu/direct/$(CPU)/$(FILENAME) $(LIB_MAX)/$(FILENAME)
 	ln -fs $(FILENAME) $(LIB_MAX)/$(SONAME)
 
+ifneq ($(COMPILER_ARCH),none)
 	mkdir -p $(COMPILER_BIN)
 	cp -fr compiler/$(COMPILER_ARCH)/* $(COMPILER_BIN)
+endif
 
 # Skip .so post processing.
 override_dh_strip:
 override_dh_shlibdeps:
+
+# Skip tests.
+override_dh_auto_test:

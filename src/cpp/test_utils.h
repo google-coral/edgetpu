@@ -16,6 +16,9 @@ enum CnnProcessorType { kEdgeTpu, kCpu };
 
 enum CompilationType { kCoCompilation, kSingleCompilation };
 
+// Returns a directory prefix for temporary storage.
+std::string GetTempPrefix();
+
 // Retrieves test file path with file name.
 std::string TestDataPath(const std::string& name);
 
@@ -30,11 +33,16 @@ std::vector<uint8_t> GetRandomInput(std::vector<int> shape);
 std::vector<uint8_t> GetInputFromImage(const std::string& image_path,
                                        const ImageDims& target_dims);
 
-// Gets list of all models.
-std::vector<std::string> GetAllModels();
-
 // Tests model with random input. Ensures it's runnable.
-void TestWithRandomInput(const std::string& model_path);
+struct RandomInputTestParams {
+  std::string model_path;
+  int expected_num_output_tensors;
+};
+
+void TestWithRandomInput(const RandomInputTestParams& test_params);
+
+void TestWithRandomInput(const std::string& model_path,
+                         int expected_num_output_tensors);
 
 // Generate a temp tflite file name under /tmp/ folder.
 std::string GenerateRandomFilePath(const std::string& prefix,
@@ -60,6 +68,19 @@ bool TopKContains(const std::vector<std::pair<int, float>>& topk, int label);
 // (mean - zero_point * scale * stddev) and (stddev * scale) respectively.
 // If rgb2bgr is true, the channels of input image will be shuffled from
 // RGB to BGR.
+struct ClassificationTestParams {
+  std::string model_path;
+  std::string image_path;
+  float effective_scale = 1.0f;
+  std::vector<float> effective_means;
+  bool rgb2bgr = false;
+  float score_threshold = 0.0f;
+  int k = 3;
+  int expected_topk_label = -1;
+};
+
+void TestClassification(const ClassificationTestParams& test_params);
+
 void TestClassification(const std::string& model_path,
                         const std::string& image_path, float effective_scale,
                         const std::vector<float>& effective_means, bool rgb2bgr,
@@ -115,13 +136,12 @@ void InferenceStressTest(const std::string& model_path, int runs,
 float ComputeIntersectionOverUnion(const std::vector<uint8_t>& mask1,
                                    const std::vector<uint8_t>& mask2);
 
-// Tests segmentation models that include ArgMax operator, returns the
-// prediction results.
-void TestSegmentationWithArgmax(const std::string& model_name,
-                                const std::string& image_name,
-                                const std::string& seg_name, int size,
-                                float iou_threshold,
-                                std::vector<uint8_t>* pred_segmentation);
+// Tests segmentation models, returns the prediction results.
+void TestSegmentation(const std::string& model_name,
+                      const std::string& image_name,
+                      const std::string& groundtruth_name, int size,
+                      float iou_threshold, bool model_has_argmax,
+                      std::vector<uint8_t>* pred_segmentation);
 
 }  // namespace coral
 

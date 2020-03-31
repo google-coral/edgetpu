@@ -14,81 +14,63 @@
 
 """Benchmark on small data set."""
 
+import numpy as np
 import os
-import subprocess
 import time
+import tempfile
 from edgetpu.basic.basic_engine import BasicEngine
 from edgetpu.learn.imprinting.engine import ImprintingEngine
 import test_utils
 
 
-def _get_shape(model):
-  """Gets images shape required by model.
+def input_tensor_size(model):
+  """Returns model input tensor size."""
+  engine = BasicEngine(test_utils.test_data_path(model))
+  batch, height, width, depth = engine.get_input_tensor_shape()
+  return batch * height * width * depth
+
+
+def run_benchmark(model):
+  """Measures training time for given model with random data.
 
   Args:
     model: string, file name of the input model.
-
-  Returns:
-    (width, height)
-  """
-  basic_engine = BasicEngine(test_utils.test_data_path('imprinting', model))
-  _, height, width, _ = basic_engine.get_input_tensor_shape()
-  return (width, height)
-
-
-def _benchmark_for_training(model, data_set):
-  """Measures training time for given model and data set.
-
-  Args:
-    model: string, file name of the input model.
-    data_set: string, name of the folder storing images. Labels file is also
-      named as '[data_set].csv'.
 
   Returns:
     float, training time.
   """
-  shape = _get_shape(model)
-  engine = ImprintingEngine(test_utils.test_data_path('imprinting', model), keep_classes=False)
-  output_model_path = '/tmp/model_for_benchmark.tflite'
+  input_size = input_tensor_size(model)
+  engine = ImprintingEngine(test_utils.test_data_path(model), keep_classes=False)
 
-  data_dir = test_utils.test_data_path(data_set)
+  np.random.seed(12345)
+  data_by_category = {}
+  # 10 Categories, each has 20 images.
+  for i in range(0, 10):
+    data_by_category[i] = []
+    for j in range(0, 20):
+      data_by_category[i].append(np.random.randint(0, 255, input_size))
 
-  # The labels file is named as '[data_set].csv'.
-  image_list_by_category = test_utils.prepare_classification_data_set(
-      test_utils.test_data_path(data_set + '.csv'))
-
-  start_time = time.monotonic()
-  for category, image_list in image_list_by_category.items():
-    category_dir = os.path.join(data_dir, category)
-    image_list_by_category[category] = test_utils.prepare_images(
-        image_list, category_dir, shape)
-  end_time = time.monotonic()
-  print('Image pre-processing time: ', end_time - start_time, 's')
-  start_time = end_time
-  for class_id, tensors in enumerate(image_list_by_category.values()):
+  start = time.perf_counter()
+  for class_id, tensors in enumerate(data_by_category.values()):
     engine.train(tensors, class_id)
-  engine.save_model(output_model_path)
-  training_time = time.monotonic() - start_time
-  print('Model: ', model)
-  print('Data set : ', data_set)
-  print('Training time : ', training_time, 's')
-  # Remove the model.
-  subprocess.call(['rm', output_model_path])
+  with tempfile.NamedTemporaryFile() as f:
+    engine.save_model(f.name)
+  training_time = time.perf_counter() - start
+
+  print('Model: %s' % model)
+  print('Training time: %.2fs' % training_time)
   return training_time
 
 
 if __name__ == '__main__':
   args = test_utils.parse_args()
   machine = test_utils.machine_info()
-  models, reference = test_utils.read_reference(
-      'imprinting_reference_%s.csv' % machine)
-  model_num = len(models)
+  models, reference = test_utils.read_reference('imprinting_reference_%s.csv' % machine)
   results = [('MODEL', 'DATA_SET', 'INFERENCE_TIME')]
-  for cnt, name in enumerate(models, start=1):
-    # 10 Categories, each has 20 images.
-    data = 'open_image_v4_subset'
-    print('---------------- ', cnt, '/', model_num, ' ----------------')
-    results.append((name, data, _benchmark_for_training(name, data)))
+  for i, name in enumerate(models, start=1):
+    print('---------------- %d / %d ----------------' % (i, len(models)))
+    results.append((name, 'random', run_benchmark(name)))
   test_utils.save_as_csv('imprinting_benchmarks_%s_%s.csv' %
-                         (machine, time.strftime('%Y%m%d-%H%M%S')), results)
+                             (machine, time.strftime('%Y%m%d-%H%M%S')),
+                         results)
   test_utils.check_result(reference, results, args.enable_assertion)

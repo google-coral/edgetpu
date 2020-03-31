@@ -11,7 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""A demo to classify Raspberry Pi camera stream."""
+r"""A demo for live classification with the Raspberry Pi camera.
+
+This script is compatible only with a Raspberry Pi with a connected
+Pi Camera and monitor (and a USB Accelerator). To setup the Pi Camera, see
+https://www.raspberrypi.org/documentation/configuration/camera.md
+
+Then simply run the following command to see the camera feed with real-time
+classifications on your monitor:
+
+python3 classify_capture.py \
+--model models/mobilenet_v2_1.0_224_quant_edgetpu.tflite \
+--label models/imagenet_labels.txt
+"""
 
 import argparse
 import io

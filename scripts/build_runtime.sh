@@ -29,7 +29,16 @@ mkdir -p "${DIST_DIR}/${DIR_NAME}"
 cp -r "${SCRIPT_DIR}/../libedgetpu" \
       "${SCRIPT_DIR}/runtime/install.sh" \
       "${SCRIPT_DIR}/runtime/uninstall.sh" \
+      "${SCRIPT_DIR}/windows/install.bat" \
+      "${SCRIPT_DIR}/windows/uninstall.bat" \
       "${DIST_DIR}/${DIR_NAME}"
-tar -C "${DIST_DIR}" \
-    -zcvf "${DIST_DIR}/${DIR_NAME}_$(date '+%Y%m%d').tar.gz" \
-    "${DIR_NAME}"
+
+mkdir -p "${DIST_DIR}/${DIR_NAME}/third_party"
+cp -r "${SCRIPT_DIR}/../third_party/coral_usb_accelerator_winusb" \
+      "${SCRIPT_DIR}/../third_party/libusb_win" \
+      "${SCRIPT_DIR}/../third_party/usbdk" \
+      "${DIST_DIR}/${DIR_NAME}/third_party"
+
+pushd "${DIST_DIR}"
+zip -r "${DIST_DIR}/${DIR_NAME}_$(date '+%Y%m%d').zip" "${DIR_NAME}"
+popd

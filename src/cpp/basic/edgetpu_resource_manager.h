@@ -77,7 +77,7 @@ class EdgeTpuResourceManager {
 
   // Gets next available EdgeTpuResource.
   EdgeTpuApiStatus GetEdgeTpuResource(
-      std::unique_ptr<EdgeTpuResource>* resource) LOCKS_EXCLUDED(mu_);
+      std::unique_ptr<EdgeTpuResource>* resource) ABSL_LOCKS_EXCLUDED(mu_);
 
   // Gets context associated with specified device (through `path`).
   //
@@ -91,7 +91,7 @@ class EdgeTpuResourceManager {
       const std::string& path, std::unique_ptr<EdgeTpuResource>* resource);
 
   EdgeTpuApiStatus ReclaimEdgeTpuResource(const std::string& path)
-      LOCKS_EXCLUDED(mu_);
+      ABSL_LOCKS_EXCLUDED(mu_);
 
   // Edge TPU assignment state.
   enum class EdgeTpuState {
@@ -115,11 +115,12 @@ class EdgeTpuResourceManager {
 
   EdgeTpuApiStatus CreateEdgeTpuResource(
       const edgetpu::DeviceType type, const std::string& path,
-      std::unique_ptr<EdgeTpuResource>* resource) EXCLUSIVE_LOCKS_REQUIRED(mu_);
+      std::unique_ptr<EdgeTpuResource>* resource)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Gets next available EdgeTpuResource when there are multiple detected.
   EdgeTpuApiStatus GetEdgeTpuResourceMultipleDetected(
-      std::unique_ptr<EdgeTpuResource>* resource) LOCKS_EXCLUDED(mu_);
+      std::unique_ptr<EdgeTpuResource>* resource) ABSL_LOCKS_EXCLUDED(mu_);
 
   struct ResourceState {
     int usage_count = 0;
@@ -128,7 +129,8 @@ class EdgeTpuResourceManager {
   absl::Mutex mu_;
   // Keeps track of assigned Edge TPU, e.g., how many references on it.
   // Keyed by device path.
-  std::unordered_map<std::string, ResourceState> resource_map_ GUARDED_BY(mu_);
+  std::unordered_map<std::string, ResourceState> resource_map_
+      ABSL_GUARDED_BY(mu_);
   // Data structure to stores error messages.
   std::unique_ptr<EdgeTpuErrorReporter> error_reporter_;
 };

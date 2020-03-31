@@ -16,9 +16,9 @@ void ImprintingEngine::Train(const std::vector<std::vector<uint8_t>>& images,
                              const int class_id) {
   // Flatten input data.
   std::vector<uint8_t> tmp;
-  int d1 = images.size();
+  const size_t d1 = images.size();
   CHECK_GT(d1, 0) << "No images sent for training!";
-  int d2 = images[0].size();
+  const size_t d2 = images[0].size();
   CHECK_GT(d2, 0) << "Image size is zero!";
   tmp.resize(d1 * d2);
   int offset = 0;
@@ -34,7 +34,7 @@ std::vector<float> ImprintingEngine::RunInference(
     const std::vector<uint8_t>& input) {
   std::vector<float> results;
   float const* tmp_result;
-  int tmp_result_size;
+  size_t tmp_result_size;
   LOG_IF(FATAL, engine_->RunInference(input.data(), input.size(), &tmp_result,
                                       &tmp_result_size) == kEdgeTpuApiError)
       << engine_->get_error_message();

@@ -78,18 +78,37 @@ TfLiteStatus PrepOutputTensor(TfLiteContext* context,
   return context->ResizeTensor(context, output_tensor, size);
 }
 
-void DequantizeTensor(TfLiteContext* context, const TfLiteTensor* src,
-                      TfLiteTensor* dst, float extra_scale = 1.0) {
-  const int num_elements = src->bytes;
-  assert(num_elements * sizeof(float) == dst->bytes);
-  const float quant_zero_point = static_cast<float>(src->params.zero_point);
-  const float quant_scale = src->params.scale * extra_scale;
-  const uint8_t* src_data = GetTensorData<uint8_t>(src);
-  assert(src_data != nullptr);
+void ScaleFloatTensor(const TfLiteTensor* src, TfLiteTensor* dst, float scale) {
+  assert(src->type == kTfLiteFloat32);
+  assert(dst->type == kTfLiteFloat32);
+  const float* src_data = GetTensorData<float>(src);
   float* dst_data = GetTensorData<float>(dst);
+  assert(src_data != nullptr);
   assert(dst_data != nullptr);
-  for (int idx = 0; idx < num_elements; ++idx) {
-    dst_data[idx] = (src_data[idx] - quant_zero_point) * quant_scale;
+  const size_t tensor_elements = src->bytes / sizeof(float);
+  for (int idx = 0; idx < tensor_elements; ++idx) {
+    dst_data[idx] = src_data[idx] * scale;
+  }
+}
+
+void DequantizeTensor(const TfLiteTensor* src, TfLiteTensor* dst,
+                      float extra_scale = 1.0) {
+  if (src->type == kTfLiteUInt8) {
+    const int num_elements = src->bytes;
+    assert(num_elements * sizeof(float) == dst->bytes);
+    const float quant_zero_point = static_cast<float>(src->params.zero_point);
+    const float quant_scale = src->params.scale * extra_scale;
+    const uint8_t* src_data = GetTensorData<uint8_t>(src);
+    assert(src_data != nullptr);
+    float* dst_data = GetTensorData<float>(dst);
+    assert(dst_data != nullptr);
+    for (int idx = 0; idx < num_elements; ++idx) {
+      dst_data[idx] = (src_data[idx] - quant_zero_point) * quant_scale;
+    }
+  } else if (src->type == kTfLiteFloat32) {
+    ScaleFloatTensor(src, dst, extra_scale);
+  } else {
+    assert(false);
   }
 }
 
@@ -103,9 +122,12 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
       GetInput(context, node, kInputTensorShortOffsets);
   const TfLiteTensor* mids = GetInput(context, node, kInputTensorMidOffsets);
 
-  TF_LITE_ENSURE_EQ(context, heatmaps->type, kTfLiteUInt8);
-  TF_LITE_ENSURE_EQ(context, shorts->type, kTfLiteUInt8);
-  TF_LITE_ENSURE_EQ(context, mids->type, kTfLiteUInt8);
+  TF_LITE_ENSURE(context, (heatmaps->type == kTfLiteUInt8 ||  //
+                           heatmaps->type == kTfLiteFloat32));
+  TF_LITE_ENSURE(context, (shorts->type == kTfLiteUInt8 ||  //
+                           shorts->type == kTfLiteFloat32));
+  TF_LITE_ENSURE(context, (mids->type == kTfLiteUInt8 ||  //
+                           mids->type == kTfLiteFloat32));
   TF_LITE_ENSURE_EQ(context, NumDimensions(heatmaps), 4);
   TF_LITE_ENSURE_EQ(context, NumDimensions(shorts), 4);
   TF_LITE_ENSURE_EQ(context, NumDimensions(mids), 4);
@@ -169,6 +191,7 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
 TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   auto* op_data = reinterpret_cast<OpData*>(node->user_data);
 
+  TF_LITE_ENSURE(context, op_data->stride > 0);
   const TfLiteTensor* heatmaps = GetInput(context, node, kInputTensorHeatmaps);
   const TfLiteTensor* shorts =
       GetInput(context, node, kInputTensorShortOffsets);
@@ -181,9 +204,9 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   TfLiteTensor* shorts_float = &context->tensors[op_data->shorts_float_index];
   TfLiteTensor* mids_float = &context->tensors[op_data->mids_float_index];
 
-  DequantizeTensor(context, heatmaps, heatmaps_float);
-  DequantizeTensor(context, shorts, shorts_float, 1.0 / op_data->stride);
-  DequantizeTensor(context, mids, mids_float, 1.0 / op_data->stride);
+  DequantizeTensor(heatmaps, heatmaps_float);
+  DequantizeTensor(shorts, shorts_float, 1.0 / op_data->stride);
+  DequantizeTensor(mids, mids_float, 1.0 / op_data->stride);
 
   const float* heatmaps_data = GetTensorData<float>(heatmaps_float);
   const float* mids_data = GetTensorData<float>(mids_float);

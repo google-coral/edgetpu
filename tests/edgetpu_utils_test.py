@@ -21,10 +21,6 @@ from edgetpu.basic.basic_engine import BasicEngine
 
 class EdgeTpuUtilsTest(unittest.TestCase):
 
-  def test_runtime_version(self):
-    self.assertIn(edgetpu_utils.SUPPORTED_RUNTIME_VERSION,
-                  edgetpu_utils.GetRuntimeVersion())
-
   def test_list_edge_tpu_paths(self):
     num_all = len(
         edgetpu_utils.ListEdgeTpuPaths(edgetpu_utils.EDGE_TPU_STATE_NONE))

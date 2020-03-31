@@ -20,9 +20,9 @@ TEST(InferenceStressTest, MobilenetV1) {
                       absl::GetFlag(FLAGS_stress_test_runs));
 }
 
-TEST(InferenceStressTest, MobilenetV1SSD) {
+TEST(InferenceStressTest, SsdMobileNetV1) {
   InferenceStressTest(
-      TestDataPath("mobilenet_ssd_v1_coco_quant_postprocess_edgetpu.tflite"),
+      TestDataPath("ssd_mobilenet_v1_coco_quant_postprocess_edgetpu.tflite"),
       absl::GetFlag(FLAGS_stress_test_runs));
 }
 

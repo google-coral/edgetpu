@@ -21,8 +21,8 @@ cc_test(
         "//src/cpp/basic:basic_engine",
         "@com_google_absl//absl/flags:parse",
         "@com_google_absl//absl/strings",
-        "@com_google_glog//:glog",
         "@com_google_googletest//:gtest",
+        "@glog",
     ],
 )
 
@@ -41,7 +41,23 @@ cc_binary(
         "//src/cpp/basic:basic_engine",
         "@com_github_google_benchmark//:benchmark",
         "@com_google_absl//absl/flags:parse",
-        "@com_google_glog//:glog",
+        "@glog",
+    ],
+)
+
+cc_test(
+    name = "posenet_decoder_test",
+    timeout = "long",
+    srcs = [
+        "posenet_decoder_test.cc",
+    ],
+    linkstatic = 1,
+    deps = [
+        ":posenet_decoder",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+        "@glog",
     ],
 )
 

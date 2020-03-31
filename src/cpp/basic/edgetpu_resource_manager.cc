@@ -38,7 +38,7 @@ EdgeTpuApiStatus EdgeTpuResourceManager::CreateEdgeTpuResource(
   resource_map_[path].usage_count = 1;
   resource_map_[path].context = tpu_context;
   // Using `new` to access a non-public constructor.
-  (*resource) =
+  *resource =
       absl::WrapUnique(new EdgeTpuResource(path, resource_map_[path].context));
   return kEdgeTpuApiOk;
 }
@@ -67,8 +67,7 @@ EdgeTpuApiStatus EdgeTpuResourceManager::GetEdgeTpuResource(
   if (it != resource_map_.end()) {
     it->second.usage_count++;
     // Using `new` to access a non-public constructor.
-    (*resource) =
-        absl::WrapUnique(new EdgeTpuResource(path, it->second.context));
+    *resource = absl::WrapUnique(new EdgeTpuResource(path, it->second.context));
     return kEdgeTpuApiOk;
   }
 

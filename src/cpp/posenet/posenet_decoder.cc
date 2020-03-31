@@ -5,12 +5,9 @@
 #include <cmath>
 #include <cstring>
 #include <numeric>
-#include <ostream>
-#include <queue>
 #include <vector>
 
 namespace coral {
-namespace {
 
 using posenet_decoder_op::kNumKeypoints;
 using posenet_decoder_op::Point;
@@ -37,100 +34,43 @@ enum KeypointType {
   kRightAnkle
 };
 
-const std::array<std::pair<KeypointType, KeypointType>, 48> kEdgeList = {
-    {{kRightAnkle, kRightKnee},
-     {kRightKnee, kRightHip},
-     {kRightHip, kRightShoulder},
-     {kRightWrist, kRightElbow},
-     {kRightElbow, kRightShoulder},
-     {kRightShoulder, kNose},
-     {kLeftAnkle, kLeftKnee},
-     {kLeftKnee, kLeftHip},
-     {kLeftHip, kLeftShoulder},
-     {kLeftWrist, kLeftElbow},
-     {kLeftElbow, kLeftShoulder},
-     {kLeftShoulder, kNose},
-     {kRightEar, kRightEye},
-     {kRightEye, kNose},
-     {kLeftEar, kLeftEye},
-     {kLeftEye, kNose},
-     {kNose, kLeftEye},
-     {kLeftEye, kLeftEar},
-     {kNose, kRightEye},
-     {kRightEye, kRightEar},
-     {kNose, kLeftShoulder},
-     {kLeftShoulder, kLeftElbow},
-     {kLeftElbow, kLeftWrist},
-     {kLeftShoulder, kLeftHip},
-     {kLeftHip, kLeftKnee},
-     {kLeftKnee, kLeftAnkle},
-     {kNose, kRightShoulder},
-     {kRightShoulder, kRightElbow},
-     {kRightElbow, kRightWrist},
-     {kRightShoulder, kRightHip},
-     {kRightHip, kRightKnee},
-     {kRightKnee, kRightAnkle},
-     {kLeftEye, kNose},
-     {kLeftEar, kLeftEye},
-     {kRightEye, kNose},
-     {kRightEar, kRightEye},
-     {kLeftShoulder, kNose},
-     {kLeftElbow, kLeftShoulder},
-     {kLeftWrist, kLeftElbow},
-     {kLeftHip, kLeftShoulder},
-     {kLeftKnee, kLeftHip},
-     {kLeftAnkle, kLeftKnee},
-     {kRightShoulder, kNose},
-     {kRightElbow, kRightShoulder},
-     {kRightWrist, kRightElbow},
-     {kRightHip, kRightShoulder},
-     {kRightKnee, kRightHip},
-     {kRightAnkle, kRightKnee}}};
+const std::array<std::pair<KeypointType, KeypointType>, 32> kEdgeList = {{
 
-// Defines a 2-D keypoint with (x, y) float coordinates and its type id.
-struct KeypointWithScore {
-  KeypointWithScore(const Point& _point, const int _id, const float _score)
-      : point(_point), id(_id), score(_score) {}
-  Point point;
-  int id;
-  float score;
-  // NOLINTNEXTLINE: clang-diagnostic-unused-function
-  friend std::ostream& operator<<(std::ostream& ost,
-                                  const KeypointWithScore& keypoint) {
-    return ost << keypoint.point.y << ", " << keypoint.point.x << ", "
-               << keypoint.id << ", " << keypoint.score;
-  }
-};
+    // Forward edges
+    {kNose, kLeftEye},
+    {kLeftEye, kLeftEar},
+    {kNose, kRightEye},
+    {kRightEye, kRightEar},
+    {kNose, kLeftShoulder},
+    {kLeftShoulder, kLeftElbow},
+    {kLeftElbow, kLeftWrist},
+    {kLeftShoulder, kLeftHip},
+    {kLeftHip, kLeftKnee},
+    {kLeftKnee, kLeftAnkle},
+    {kNose, kRightShoulder},
+    {kRightShoulder, kRightElbow},
+    {kRightElbow, kRightWrist},
+    {kRightShoulder, kRightHip},
+    {kRightHip, kRightKnee},
+    {kRightKnee, kRightAnkle},
 
-// Defines a comparator which allows us to rank keypoints based on their score.
-struct KeypointWithScoreComparator {
-  bool operator()(const KeypointWithScore& lhs,
-                  const KeypointWithScore& rhs) const {
-    return lhs.score < rhs.score;
-  }
-};
-
-using DecreasingScoreKeypointPriorityQueue =
-    std::priority_queue<KeypointWithScore, std::vector<KeypointWithScore>,
-                        KeypointWithScoreComparator>;
-
-// An adjacency list representing the directed edges connecting keypoints.
-struct AdjacencyList {
-  AdjacencyList() = default;
-  AdjacencyList(const AdjacencyList&) = default;
-  AdjacencyList& operator=(const AdjacencyList&) = default;
-
-  explicit AdjacencyList(const int n_nodes)
-      : child_ids(n_nodes), edge_ids(n_nodes) {}
-
-  // child_ids[i] is a vector holding the node ids of all children of the i-th
-  // node and edge_ids[i] is a vector holding the edge ids of all edges stemming
-  // from the i-th node. If the k-th edge in the graph starts at the i-th node
-  // and ends at the j-th node, then child_ids[i] and edge_ids will contain j
-  // and k, respectively, at corresponding positions.
-  std::vector<std::vector<int>> child_ids;
-  std::vector<std::vector<int>> edge_ids;
-};
+    // Backward edges
+    {kLeftEye, kNose},
+    {kLeftEar, kLeftEye},
+    {kRightEye, kNose},
+    {kRightEar, kRightEye},
+    {kLeftShoulder, kNose},
+    {kLeftElbow, kLeftShoulder},
+    {kLeftWrist, kLeftElbow},
+    {kLeftHip, kLeftShoulder},
+    {kLeftKnee, kLeftHip},
+    {kLeftAnkle, kLeftKnee},
+    {kRightShoulder, kNose},
+    {kRightElbow, kRightShoulder},
+    {kRightWrist, kRightElbow},
+    {kRightHip, kRightShoulder},
+    {kRightKnee, kRightHip},
+    {kRightAnkle, kRightKnee}}};
 
 template <typename T>
 constexpr const T& clamp(const T& v, const T& lo, const T& hi) {
@@ -160,6 +100,9 @@ float ComputeSquaredDistance(const Point& a, const Point& b) {
 
 // Computes the sigmoid of the input. The output is in (0, 1).
 float Sigmoid(const float x) { return 1.0f / (1.0f + std::exp(-x)); }
+
+// Inverse of the sigmoid, computes log odds from a probability.
+float Logodds(const float x) { return -std::log(1.0f / (x + 1E-6) - 1.0f); }
 
 // Helper function for 1-D linear interpolation. It computes the floor and the
 // ceiling of the input coordinate, as well as the weighting factor between the
@@ -251,8 +194,9 @@ Point FindDisplacedPosition(const float* short_offsets,
   // Follow the mid-range offsets.
   int channels[] = {edge_id, num_edges + edge_id};
   const int n_channels = 2;
-  SampleTensorAtMultipleChannels(mid_offsets, height, width, 2 * num_edges, y,
-                                 x, channels, n_channels, &offsets[0]);
+  // Total size of mid_offsets is height x width x 2*2*num_edges
+  SampleTensorAtMultipleChannels(mid_offsets, height, width, 2 * 2 * num_edges,
+                                 y, x, channels, n_channels, &offsets[0]);
   y = clamp(y + offsets[0], 0.0f, height - 1.0f);
   x = clamp(x + offsets[1], 0.0f, width - 1.0f);
   // Refine by the short-range offsets.
@@ -318,8 +262,18 @@ void BacktrackDecodePose(const float* scores, const float* short_offsets,
         adjacency_list.child_ids[current_keypoint.id].size();
     for (int j = 0; j < num_children; ++j) {
       const int child_id = adjacency_list.child_ids[current_keypoint.id][j];
-      const int edge_id = adjacency_list.edge_ids[current_keypoint.id][j];
+      int edge_id = adjacency_list.edge_ids[current_keypoint.id][j];
       if (keypoint_decoded[child_id]) continue;
+
+      // The mid-offsets block is organized as 4 blocks of kNumEdges:
+      // [fwd Y offsets][fwd X offsets][bwd Y offsets][bwd X offsets]
+      // OTOH edge_id is [0,kNumEdges) for forward edges and
+      // [kNumEdges, 2*kNumEdges) for backward edges.
+      // Thus if the edge is a backward edge (>kNumEdges) then we need
+      // to start 16 indices later to be correctly aligned with the mid-offsets.
+      if (edge_id > posenet_decoder_op::kNumEdges) {
+        edge_id += posenet_decoder_op::kNumEdges;
+      }
 
       const Point child_point = FindDisplacedPosition(
           short_offsets, mid_offsets, height, width, num_keypoints, num_edges,
@@ -444,8 +398,6 @@ void PerformSoftKeypointNMS(const std::vector<int>& decreasing_indices,
   }
 }
 
-}  // namespace
-
 namespace posenet_decoder_op {
 
 int DecodeAllPoses(const float* scores, const float* short_offsets,
@@ -459,15 +411,12 @@ int DecodeAllPoses(const float* scores, const float* short_offsets,
   static const int kLocalMaximumRadius = 1;
 
   // score_threshold threshold as a logit, before sigmoid
-  const float min_score_logit =
-      -std::log(1.0f / (score_threshold + 0.000001) - 1);
+  const float min_score_logit = Logodds(score_threshold);
 
   DecreasingScoreKeypointPriorityQueue queue;
   BuildKeypointWithScoreQueue(scores, short_offsets, height, width,
                               kNumKeypoints, min_score_logit,
                               kLocalMaximumRadius, &queue);
-  // TODO This is really a constant, better if we could do this list
-  // building just once?
   AdjacencyList adjacency_list = BuildAdjacencyList();
 
   const int topk = kNumKeypoints;

@@ -16,9 +16,9 @@ TEST(InferenceRepeatabilityTest, MobilenetV1) {
                     absl::GetFlag(FLAGS_stress_test_runs));
 }
 
-TEST(InferenceRepeatabilityTest, MobilenetV1SSD) {
+TEST(InferenceRepeatabilityTest, SsdMobileNetV1) {
   RepeatabilityTest(
-      TestDataPath("mobilenet_ssd_v1_coco_quant_postprocess_edgetpu.tflite"),
+      TestDataPath("ssd_mobilenet_v1_coco_quant_postprocess_edgetpu.tflite"),
       absl::GetFlag(FLAGS_stress_test_runs));
 }
 

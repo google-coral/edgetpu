@@ -20,6 +20,7 @@ import csv
 import os
 import platform
 import random
+import tempfile
 import urllib.parse
 
 import numpy as np
@@ -40,11 +41,23 @@ def test_image(path, *paths):
     with Image.open(f) as image:
       yield image
 
+@contextlib.contextmanager
+def TemporaryFile(suffix=None):
+  """Creates a named temp file, and deletes after going out of scope.
 
-def get_model_list():
-  """Gets all tflite models for benchmark."""
-  return (f for f in os.listdir(TEST_DATA_DIR) if f.endswith('.tflite'))
+  Exists to work around issues with passing the result of
+  tempfile.NamedTemporaryFile to native code on Windows,
+  if delete was set to True.
 
+  Args:
+    suffix: If provided, the file name will end with suffix.
+  """
+  resource = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
+  try:
+    yield resource
+  finally:
+    resource.close()
+    os.unlink(resource.name)
 
 def generate_random_input(seed, n):
   """Generates a list with n uint8 numbers."""
@@ -95,11 +108,15 @@ def read_label_file(file_path):
 
 def area(box):
   """Calculates area of a given bounding box."""
+  assert box[1][0] >= box[0][0]
+  assert box[1][1] >= box[0][1]
   return float((box[1][0]-box[0][0]) * (box[1][1] - box[0][1]))
 
 
 def iou(box_a, box_b):
   """Calculates intersection area / union area for two bounding boxes."""
+  assert area(box_a) > 0
+  assert area(box_b) > 0
   intersect = np.array(
       [[max(box_a[0][0], box_b[0][0]), max(box_a[0][1], box_b[0][1])],
        [min(box_a[1][0], box_b[1][0]), min(box_a[1][1], box_b[1][1])]])
