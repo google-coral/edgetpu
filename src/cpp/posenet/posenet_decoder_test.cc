@@ -20,7 +20,7 @@ using ::testing::Pointwise;
 namespace coral {
 
 TEST(DecreasingArgSortTest, UnsortedVector) {
-  std::vector<float> scores = {0.6, 0.897, 0.01, 0.345, 0.28473};
+  std::vector<float> scores = {0.6f, 0.897f, 0.01f, 0.345f, 0.28473f};
   std::vector<int> indices(scores.size());
 
   DecreasingArgSort(scores, &indices);
@@ -28,7 +28,7 @@ TEST(DecreasingArgSortTest, UnsortedVector) {
 }
 
 TEST(DecreasingArgSortTest, AllSameVector) {
-  std::vector<float> scores = {0.5, 0.5, 0.5, 0.5, 0.5};
+  std::vector<float> scores = {0.5f, 0.5f, 0.5f, 0.5f, 0.5f};
   std::vector<int> indices(scores.size());
 
   DecreasingArgSort(scores, &indices);
@@ -36,7 +36,7 @@ TEST(DecreasingArgSortTest, AllSameVector) {
 }
 
 TEST(DecreasingArgSortTest, NegativeVector) {
-  std::vector<float> scores = {0.6, -0.897, 0.01, 0.345, 0.28473};
+  std::vector<float> scores = {0.6f, -0.897f, 0.01f, 0.345f, 0.28473f};
   std::vector<int> indices(scores.size());
 
   DecreasingArgSort(scores, &indices);
@@ -58,9 +58,9 @@ TEST(SigmoidTest, NegativeFive) { EXPECT_FLOAT_EQ(Sigmoid(-5), 0.006692851f); }
 
 TEST(LogoddsTest, NegativeNumber) { EXPECT_TRUE(std::isnan(Logodds(-1))); }
 
-TEST(LogoddsTest, Zero) { EXPECT_FLOAT_EQ(Logodds(0), -13.81551); }
+TEST(LogoddsTest, Zero) { EXPECT_FLOAT_EQ(Logodds(0), -13.81551f); }
 
-TEST(LogoddsTest, FiveTenths) { EXPECT_FLOAT_EQ(Logodds(0.5), 0.000004); }
+TEST(LogoddsTest, FiveTenths) { EXPECT_FLOAT_EQ(Logodds(0.5f), 0.000004f); }
 
 TEST(BuildLinearInterpolationTest, BuildYIsValid) {
   const int height = 3;
@@ -171,7 +171,7 @@ TEST(FindDisplacedPositionTest, PositionIsCorrectAllZeros) {
   float short_offsets[height * width * num_keypoints * 2] = {};
   // Create a mid_offsets tensor with all 0s
   float mid_offsets[height * width * 2 * 2 * num_edges] = {};
-  Point source{4.1, 3.5};
+  Point source{4.1f, 3.5f};
   const int edge_id = 1;
   const int target_id = 2;
 
@@ -200,7 +200,7 @@ TEST(FindDisplacedPositionTest, PositionIsCorrectAllOnes) {
   // Create a mid_offsets tensor with all -1s
   float mid_offsets[height * width * 2 * 2 * num_edges];
   std::fill(std::begin(mid_offsets), std::end(mid_offsets), -1.0f);
-  Point source{4.1, 3.5};
+  Point source{4.1f, 3.5f};
   const int edge_id = 1;
   const int target_id = 2;
 
@@ -253,16 +253,16 @@ TEST(FindDisplacedPositionTest, PositionIsCorrect) {
       }
     }
   }
-  Point source{4.1, 3.5};
+  Point source{4.1f, 3.5f};
   const int edge_id = 1;
   const int target_id = 2;
   // Make array of expected keypoints based on parameter i that
   // will be passed to FindDisplacedPosition (below)
   Point expected_points[] = {
-      Point{4.161290, 3.819355},
-      Point{4.639046, 4.439290},
-      Point{5.168825, 5.111249},
-      Point{5.755558, 5.840163},
+      Point{4.161290f, 3.819355f},
+      Point{4.639046f, 4.439290f},
+      Point{5.168825f, 5.111249f},
+      Point{5.755558f, 5.840163f},
   };
 
   for (int i = 0; i < 4; i++) {
@@ -320,8 +320,8 @@ TEST(BacktrackDecodePose, BacktrackDecodePoseIsCorrect) {
   PoseKeypoints pose_keypoints[num_keypoints];
   PoseKeypointScores keypoint_scores[num_keypoints];
 
-  const float y1 = 7.1;
-  const float x1 = 5.5;
+  const float y1 = 7.1f;
+  const float x1 = 5.5f;
   KeypointWithScore root(Point{y1, x1}, /*id=*/1, /*score=*/0);
   // score is a filler, will be set in BacktrackDecodePose
 
@@ -420,13 +420,13 @@ TEST(PassKeypointNMSTest, SquaredDistanceLessThanSquaredNMSRadius) {
   PoseKeypoints pose_keypoints[num_keypoints];
   pose_keypoints->keypoint[0] = Point{0, 0};
   pose_keypoints->keypoint[1] = Point{1, 1};
-  KeypointWithScore keypoint1(Point{0.5, 0.5}, /*id=*/0, /*score=*/0);
+  KeypointWithScore keypoint1(Point{0.5f, 0.5f}, /*id=*/0, /*score=*/0);
   // score doesn't matter here. Function doesn't check the score
   // The squared distance of this keypoint to previously detected keypoints is
   // min(0.5, 0.5) = 0.50
 
   EXPECT_FALSE(PassKeypointNMS(pose_keypoints, num_keypoints, keypoint1,
-                               /*squared_nms_radius=*/0.55));
+                               /*squared_nms_radius=*/0.55f));
 }
 
 TEST(PassKeypointNMSTest, SquaredDistanceGreaterThanSquaredNMSRadius) {
@@ -434,13 +434,13 @@ TEST(PassKeypointNMSTest, SquaredDistanceGreaterThanSquaredNMSRadius) {
   PoseKeypoints pose_keypoints[num_keypoints];
   pose_keypoints->keypoint[0] = Point{0, 0};
   pose_keypoints->keypoint[1] = Point{1, 1};
-  KeypointWithScore keypoint1(Point{0.5, 0.5}, /*id=*/0, /*score=*/0);
+  KeypointWithScore keypoint1(Point{0.5f, 0.5f}, /*id=*/0, /*score=*/0);
   // score doesn't matter here. Function doesn't check the score
   // The squared distance of this keypoint to previously detected keypoints is
   // min(0.5, 0.5) = 0.5
 
   EXPECT_TRUE(PassKeypointNMS(pose_keypoints, num_keypoints, keypoint1,
-                              /*squared_nms_radius=*/0.45));
+                              /*squared_nms_radius=*/0.45f));
 }
 
 TEST(FindOverlappingKeypointsTest, KeypointsResultNoOverlap) {
@@ -478,7 +478,7 @@ TEST(FindOverlappingKeypointsTest, KeypointsResultOverlap) {
   pose_keypoints1.keypoint[0] = Point{0, 0};
   pose_keypoints1.keypoint[1] = Point{1, 1};
   PoseKeypoints pose_keypoints2;
-  pose_keypoints2.keypoint[0] = Point{0, 0.9};
+  pose_keypoints2.keypoint[0] = Point{0, 0.9f};
   pose_keypoints2.keypoint[1] = Point{2, 2};
   std::vector<bool> mask(2, false);
 
@@ -497,8 +497,8 @@ std::vector<float> TestSoftKeypointNMS(const float squared_nms_radius,
       {Point{0, 1}, Point{2, 2}},
   };
   PoseKeypointScores all_keypoint_scores[] = {
-      {0.1, 0.2},
-      {0.3, 0.4},
+      {0.1f, 0.2f},
+      {0.3f, 0.4f},
   };
 
   // Set the second instance to be stronger than the first instance
@@ -522,15 +522,15 @@ TEST(PerformSoftKeypointNMSTest, PerformSoftKeypointNMSAverage) {
 
   // If 0 < squared_nms_radius < 1: {false, false}
   EXPECT_THAT(TestSoftKeypointNMS(/*squared_nms_radius=*/0.9, /*topk=*/2),
-              Pointwise(FloatEq(), {0.15, 0.35}));
+              Pointwise(FloatEq(), {0.15f, 0.35f}));
 
   // If 1 < squared_nms_radius < 2: {true, false}
   EXPECT_THAT(TestSoftKeypointNMS(/*squared_nms_radius=*/1.5, /*topk=*/2),
-              Pointwise(FloatEq(), {0.1, 0.35}));
+              Pointwise(FloatEq(), {0.1f, 0.35f}));
 
   // If 2 < squared_nms_radius: {true, true}
   EXPECT_THAT(TestSoftKeypointNMS(/*squared_nms_radius=*/2.1, /*topk=*/2),
-              Pointwise(FloatEq(), {0.0, 0.35}));
+              Pointwise(FloatEq(), {0.0f, 0.35f}));
 }
 
 TEST(PerformSoftKeypointNMSTest, PerformSoftKeypointNMSMaximum) {
@@ -543,16 +543,16 @@ TEST(PerformSoftKeypointNMSTest, PerformSoftKeypointNMSMaximum) {
   // corresponding keypoints of the stronger instance
 
   // If 0 < squared_nms_radius < 1: {false, false}
-  EXPECT_THAT(TestSoftKeypointNMS(/*squared_nms_radius=*/0.9, /*topk=*/1),
-              Pointwise(FloatEq(), {0.2, 0.4}));
+  EXPECT_THAT(TestSoftKeypointNMS(/*squared_nms_radius=*/0.9f, /*topk=*/1),
+              Pointwise(FloatEq(), {0.2f, 0.4f}));
 
   // If 1 < squared_nms_radius < 2: {true, false}
-  EXPECT_THAT(TestSoftKeypointNMS(/*squared_nms_radius=*/1.5, /*topk=*/1),
-              Pointwise(FloatEq(), {0.2, 0.4}));
+  EXPECT_THAT(TestSoftKeypointNMS(/*squared_nms_radius=*/1.5f, /*topk=*/1),
+              Pointwise(FloatEq(), {0.2f, 0.4f}));
 
   // If 2 < squared_nms_radius: {true, true}
-  EXPECT_THAT(TestSoftKeypointNMS(/*squared_nms_radius=*/2.1, /*topk=*/1),
-              Pointwise(FloatEq(), {0.0, 0.4}));
+  EXPECT_THAT(TestSoftKeypointNMS(/*squared_nms_radius=*/2.1f, /*topk=*/1),
+              Pointwise(FloatEq(), {0.0f, 0.4f}));
 }
 }  // namespace coral
 
