@@ -12,7 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""An inference engine that performs object detection."""
+"""An inference engine that performs object detection.
+
+  .. note::
+    ``DetectionEngine`` only supports SSD models with a post-processing op.
+    To perform object detection with other types of model architectures, instead
+    `use the TensorFlow Lite API
+    </docs/edgetpu/tflite-python/>`_.
+"""
 
 from edgetpu.basic.basic_engine import BasicEngine
 from edgetpu.utils.warning import deprecated
@@ -62,7 +69,7 @@ class DetectionEngine(BasicEngine):
       device_path (str): The device path for the Edge TPU this engine should use. This argument
         is needed only when you have multiple Edge TPUs and more inference engines than
         available Edge TPUs. For details, read `how to use multiple Edge TPUs
-        <https://coral.ai/docs/edgetpu/multiple-edgetpu/>`_.
+        </docs/edgetpu/multiple-edgetpu/>`_.
 
     Raises:
       ValueError: If the model's output tensor size is not 4.

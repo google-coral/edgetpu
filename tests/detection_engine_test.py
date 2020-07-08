@@ -53,7 +53,7 @@ class TestDetectionEnginePythonAPI(unittest.TestCase):
       self.assertGreater(ret[0].score, 0.79)
       self.assertGreater(
           test_utils.iou(
-              np.array([[0.1, 0.1], [0.7, 1.0]]), ret[0].bounding_box), 0.88)
+              np.array([[0.1, 0.1], [0.7, 1.0]]), ret[0].bounding_box), 0.86)
 
       # Detect with different resample algorithm.
       ret = engine.detect_with_image(
@@ -63,7 +63,7 @@ class TestDetectionEnginePythonAPI(unittest.TestCase):
       self.assertGreater(ret[0].score, 0.79)
       self.assertGreater(
           test_utils.iou(
-              np.array([[0.1, 0.1], [0.7, 1.0]]), ret[0].bounding_box), 0.91)
+              np.array([[0.1, 0.1], [0.7, 1.0]]), ret[0].bounding_box), 0.90)
 
       # No error when top_k > number limit of detection candidates.
       engine.detect_with_image(img, top_k=100000)
@@ -77,7 +77,7 @@ class TestDetectionEnginePythonAPI(unittest.TestCase):
       self.assertGreater(ret[0].score, 0.79)
       self.assertGreater(
           test_utils.iou(
-              np.array([[0.1, 0.1], [0.7, 1.0]]), ret[0].bounding_box), 0.88)
+              np.array([[0.1, 0.1], [0.7, 1.0]]), ret[0].bounding_box), 0.86)
 
   def test_raw_input(self):
     engine = ssd_mobilenet_v1_coco_engine()
@@ -89,7 +89,7 @@ class TestDetectionEnginePythonAPI(unittest.TestCase):
       self.assertGreater(ret[0].score, 0.79)
       self.assertGreater(
           test_utils.iou(
-              np.array([[0.1, 0.1], [0.7, 1.0]]), ret[0].bounding_box), 0.88)
+              np.array([[0.1, 0.1], [0.7, 1.0]]), ret[0].bounding_box), 0.86)
 
   def test_gray_face_detection(self):
     self._test_gray_face('ssd_mobilenet_v2_face_quant_postprocess_edgetpu.tflite')

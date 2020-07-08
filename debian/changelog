@@ -1,3 +1,10 @@
+edgetpu (14.1) stable; urgency=medium
+
+  * Update Edge TPU binary compiler
+  * Update Edge TPU runtime libraries
+
+ -- Coral <coral-support@google.com>  Tue, 07 Jul 2020 13:47:32 -0700
+
 edgetpu (14.0) stable; urgency=medium
 
   * Update Edge TPU binary compiler with new options `num_segments` and `intermediate_tensors`

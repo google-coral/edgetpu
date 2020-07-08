@@ -15,7 +15,7 @@
 import edgetpu.basic.edgetpu_utils as utils
 import sys
 
-__version__ = "2.14.0"
+__version__ = "2.14.1"
 
 expected=utils.SUPPORTED_RUNTIME_VERSION
 installed=utils.GetRuntimeVersion()

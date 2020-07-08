@@ -1,5 +1,5 @@
 # Python packages required to build the docs
-sphinx
+sphinx==1.8.5
 sphinx_rtd_theme
 recommonmark
 Pillow

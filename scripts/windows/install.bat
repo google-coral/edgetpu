@@ -38,8 +38,11 @@ if not defined FREQ_DIR set FREQ_DIR=throttled
 echo Installing UsbDk
 start /wait msiexec /i "%ROOTDIR%\third_party\usbdk\UsbDk_1.0.21_x64.msi" /quiet /qb! /norestart
 
-echo Installing WinUSB drivers
-pnputil /add-driver "%ROOTDIR%\third_party\coral_usb_accelerator_winusb\*.inf" /install
+echo Installing Windows drivers
+pnputil /add-driver "%ROOTDIR%\third_party\coral_accelerator_windows\*.inf" /install
+
+echo Installing performance counters
+lodctr /M:"%ROOTDIR%\third_party\coral_accelerator_windows\coral.man"
 
 echo Copying edgetpu and libusb to System32
 copy "%ROOTDIR%\libedgetpu\%FREQ_DIR%\x64_windows\edgetpu.dll" c:\windows\system32

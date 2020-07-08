@@ -34,7 +34,7 @@ cp -r "${SCRIPT_DIR}/../libedgetpu" \
       "${DIST_DIR}/${DIR_NAME}"
 
 mkdir -p "${DIST_DIR}/${DIR_NAME}/third_party"
-cp -r "${SCRIPT_DIR}/../third_party/coral_usb_accelerator_winusb" \
+cp -r "${SCRIPT_DIR}/../third_party/coral_accelerator_windows" \
       "${SCRIPT_DIR}/../third_party/libusb_win" \
       "${SCRIPT_DIR}/../third_party/usbdk" \
       "${DIST_DIR}/${DIR_NAME}/third_party"

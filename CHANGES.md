@@ -4,7 +4,13 @@ This is a non-exhaustive summary of changes to the Edge TPU library, compiler, a
 
 For pre-built downloads, see [coral.ai/software](https://coral.ai/software/).
 
-## Source code update, Edge TPU library 2.14.0 and compiler 2.1.302470888 (March 2020)
+## Edge TPU runtime and Edge TPU compiler 14.1 (July 2020 "eel2")
+
++   The Edge TPU runtime now supports PCIe interface on 64-bit Windows 10 systems (x86-64)
++   The Edge TPU compiler includes bug fixes and the version number now aligns with our Debian
+    package versions
+
+## Source code update, Edge TPU Python library 2.14.0 and Edge TPU compiler 2.1.302470888 (March 2020 "eel")
 
 +   C++ support for model pipelining
 +   Update Edge TPU python library to 2.14.0. New `size` parameter for `run_inference`
@@ -12,25 +18,26 @@ For pre-built downloads, see [coral.ai/software](https://coral.ai/software/).
 +   EfficientNet embedding extractor available for on-device learning with backprop
 
 
-## Edge TPU runtime v13 and compiler 2.0.291256449 (January 2020)
+## Edge TPU runtime v13 and Edge TPU compiler 2.0.291256449 (January 2020)
 
 +   Bug fixes
 +   Added support for ops: ExpandDims, Pack, Quantize, Sum, and TransposeConv
-+   First runtime release made available for Mac and Windows (compiler is still Linux only)
++   First runtime release made available for Mac and Windows (USB interface only) — the compiler
+    is still Linux only
 
 
-## Edge TPU library 2.13.0 (January 2020)
+## Edge TPU Python library 2.13.0 (January 2020 "diploria3")
 
 +   Updated the build based on the latest TensorFlow source (no API changes)
 +   First release made available for Mac and Windows
 
 
-## Edge TPU library 2.12.2 (November 2019)
+## Edge TPU Python library 2.12.2 (November 2019 "diploria2")
 
 +   Performance optimizations
 
 
-## Edge TPU library 2.12.1 (September 2019)
+## Edge TPU Python library 2.12.1 (September 2019)
 
 +   Python API signature style changes.
 +   New `read_label_file()` utility function.
@@ -45,7 +52,7 @@ For pre-built downloads, see [coral.ai/software](https://coral.ai/software/).
 +   Still compatible with Edge TPU runtime v12.
 
 
-## Edge TPU library 2.11.1 (July 2019)
+## Edge TPU Python library 2.11.1 (July 2019 "diploria")
 
 +   New [`SoftmaxRegression`](
     https://coral.ai/docs/reference/edgetpu.learn.backprop.softmax_regression/) API that allows you
@@ -59,7 +66,7 @@ For pre-built downloads, see [coral.ai/software](https://coral.ai/software/).
     https://coral.ai/docs/edgetpu/retrain-classification-ondevice/).
 
 
-## Edge TPU compiler 2.0 and runtime v12 (July 2019)
+## Edge TPU compiler 2.0 and Edge TPU runtime v12 (July 2019)
 
 +   Added support in `libedgetpu.so` for the [TensorFlow Lite delegate API](
     https://www.tensorflow.org/lite/performance/delegates), allowing you to perform inferences
@@ -77,7 +84,7 @@ For pre-built downloads, see [coral.ai/software](https://coral.ai/software/).
 +   New offline [Edge TPU Compiler](https://coral.ai/docs/edgetpu/compiler/).
 
 
-## Edge TPU libray 1.9.2 (April 2019)
+## Edge TPU C++ runtime library and Edge TPU Python library 1.9.2 (April 2019)
 
 +   New `edgetpu.h` C++ API to perform inferencing on the Edge TPU, using the
     TensorFlow Lite C++ API.
