@@ -45,17 +45,27 @@ ifeq ($(COMPILATION_MODE), opt)
 BAZEL_BUILD_FLAGS_Linux += --linkopt=-Wl,--strip-all
 endif
 
+# Extension naming conventions changed since python 3.8
+# https://docs.python.org/3/whatsnew/3.8.html#build-and-c-api-changes
+ifeq ($(shell test $(PY3_VER) -ge 38; echo $$?),0)
+	PY3_VER_EXT=$(PY3_VER)
+else
+	PY3_VER_EXT=$(PY3_VER)m
+endif
+
+
+
 ifeq ($(CPU),k8)
 BAZEL_BUILD_FLAGS_Linux += --copt=-includeglibc_compat.h
-SWIG_WRAPPER_NAME := _edgetpu_cpp_wrapper.cpython-$(PY3_VER)m-x86_64-linux-gnu.so
+SWIG_WRAPPER_NAME := _edgetpu_cpp_wrapper.cpython-$(PY3_VER_EXT)-x86_64-linux-gnu.so
 else ifeq ($(CPU),aarch64)
 BAZEL_BUILD_FLAGS_Linux += --copt=-ffp-contract=off
-SWIG_WRAPPER_NAME := _edgetpu_cpp_wrapper.cpython-$(PY3_VER)m-aarch64-linux-gnu.so
+SWIG_WRAPPER_NAME := _edgetpu_cpp_wrapper.cpython-$(PY3_VER_EXT)-aarch64-linux-gnu.so
 else ifeq ($(CPU),armv7a)
 BAZEL_BUILD_FLAGS_Linux += --copt=-ffp-contract=off
-SWIG_WRAPPER_NAME := _edgetpu_cpp_wrapper.cpython-$(PY3_VER)m-arm-linux-gnueabihf.so
+SWIG_WRAPPER_NAME := _edgetpu_cpp_wrapper.cpython-$(PY3_VER_EXT)-arm-linux-gnueabihf.so
 else ifeq ($(CPU), darwin)
-SWIG_WRAPPER_NAME := _edgetpu_cpp_wrapper.cpython-$(PY3_VER)m-darwin.so
+SWIG_WRAPPER_NAME := _edgetpu_cpp_wrapper.cpython-$(PY3_VER_EXT)-darwin.so
 endif
 
 BAZEL_BUILD_FLAGS := --compilation_mode=$(COMPILATION_MODE) \

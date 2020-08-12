@@ -6,35 +6,39 @@ RUN /update_sources.sh
 
 RUN dpkg --add-architecture armhf
 RUN dpkg --add-architecture arm64
-RUN apt-get update && apt-get install -y \
-  sudo \
-  debhelper \
-  python \
-  python-future \
-  python3-all \
-  python3-numpy \
-  python3-setuptools \
-  python3-six \
-  python3-wheel \
-  libpython3-dev \
-  libpython3-dev:armhf \
-  libpython3-dev:arm64 \
-  build-essential \
-  crossbuild-essential-armhf \
-  crossbuild-essential-arm64 \
-  libusb-1.0-0-dev \
-  libusb-1.0-0-dev:arm64 \
-  libusb-1.0-0-dev:armhf \
-  zlib1g-dev \
-  zlib1g-dev:armhf \
-  zlib1g-dev:arm64 \
-  pkg-config \
-  zip \
-  unzip \
-  curl \
-  wget \
-  git \
-  vim
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+      libc6-dev:arm64 \
+      libc6-dev:armhf \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+      sudo \
+      debhelper \
+      python \
+      $(grep 'Focal Fossa' /etc/os-release > /dev/null || echo python-future) \
+      python3-all \
+      python3-numpy \
+      python3-setuptools \
+      python3-six \
+      python3-wheel \
+      libpython3-dev \
+      libpython3-dev:armhf \
+      libpython3-dev:arm64 \
+      build-essential \
+      crossbuild-essential-armhf \
+      crossbuild-essential-arm64 \
+      libusb-1.0-0-dev \
+      libusb-1.0-0-dev:arm64 \
+      libusb-1.0-0-dev:armhf \
+      zlib1g-dev \
+      zlib1g-dev:armhf \
+      zlib1g-dev:arm64 \
+      pkg-config \
+      zip \
+      unzip \
+      curl \
+      wget \
+      git \
+      vim
 
 RUN git clone https://github.com/raspberrypi/tools.git && \
     cd tools && \

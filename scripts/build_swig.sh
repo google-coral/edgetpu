@@ -18,7 +18,8 @@ set -x
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly MAKEFILE="${SCRIPT_DIR}/../Makefile"
-PYTHON_VERSIONS="35 36 37"
+readonly DOCKER_CPUS="${DOCKER_CPUS:=k8 aarch64 armv7a}"
+PYTHON_VERSIONS="35 36 37 38"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -42,6 +43,7 @@ function docker_image {
     35) echo "ubuntu:16.04" ;;
     36) echo "ubuntu:18.04" ;;
     37) echo "debian:buster" ;;
+    38) echo "ubuntu:20.04" ;;
     *) echo "Unsupported python version: $1" 1>&2; exit 1 ;;
   esac
 }

@@ -13,6 +13,11 @@ config_setting(
     define_values = {"PY3_VER": "37"}
 )
 
+config_setting(
+    name = "py38",
+    define_values = {"PY3_VER": "38"}
+)
+
 cc_library(
   name = "python3-headers",
   hdrs = select({
@@ -28,11 +33,17 @@ cc_library(
                   "python3.7m/numpy/*.h",
                   "aarch64-linux-gnu/python3.7m/*.h",
                   "arm-linux-gnueabihf/python3.7m/*.h"]),
+    "py38": glob(["python3.8/*.h",
+                  "python3.8/cpython/*.h",
+                  "python3.8/numpy/*.h",
+                  "aarch64-linux-gnu/python3.8/*.h",
+                  "arm-linux-gnueabihf/python3.8/*.h"]),
   }, no_match_error = "PY3_VER is not specified"),
   includes = select({
     "py35": [".", "python3.5m"],
     "py36": [".", "python3.6m"],
     "py37": [".", "python3.7m"],
+    "py38": [".", "python3.8"],
   }, no_match_error = "PY3_VER is not specified"),
   visibility = ["//visibility:public"],
 )
