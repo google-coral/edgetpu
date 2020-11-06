@@ -1,0 +1,37 @@
+#!/bin/sh -e
+
+. /usr/share/debconf/confmodule
+
+db_version 2.0
+
+db_get libedgetpu/accepted-eula || true
+# Need to remind users about installing libedgetpu1-legacy-max as they installed
+# libedgetpu1-max before
+if [ "$RET" = "true" ]; then
+  case "$1" in
+    configure)
+      MSG="
+      =========WARNING========
+      python3-edgetpu package is deprecated. In order to maintain compatibility
+      with libedgetpu, we've created a "legacy" version that will not receive any
+      future updates; it exists only to support python3-edgetpu. At this moment,
+      python3-edgetpu depends on libedgetpu1-legacy-std, which runs the
+      Edge TPU at its reduced operating frequency; if you want to use
+      the Edge TPU at its max operating frequency, you can do:
+      sudo apt install libedgetpu1-legacy-max
+      For more information, see g.co/coral/python3-edgetpu.
+      ========================="
+      echo "${MSG}"
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+      echo "postinst called with unknown argument \`$1'" >&2
+      exit 1
+    ;;
+  esac
+fi
+
+exit 0

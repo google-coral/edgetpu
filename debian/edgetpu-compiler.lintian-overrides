@@ -1,8 +1,0 @@
-# We bundle a newer version of GLIBC whose ld.so must be +x.
-# ldconfig triggers but can't do anything.
-edgetpu-compiler: shared-lib-without-dependency-information
-edgetpu-compiler: binary-or-shlib-defines-rpath
-edgetpu-compiler: embedded-library
-edgetpu-compiler: subdir-in-usr-bin
-edgetpu-compiler: shlib-with-executable-bit
-edgetpu-compiler: package-has-unnecessary-activation-of-ldconfig-trigger

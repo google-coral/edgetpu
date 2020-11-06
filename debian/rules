@@ -9,9 +9,9 @@ SWIG_AMD64 := {destdir}/{install_dir}/edgetpu/swig/_edgetpu_cpp_wrapper.cpython-
 
 FILENAME := libedgetpu.so.1.0
 SONAME := libedgetpu.so.1
-LIB_DEV := debian/libedgetpu-dev/usr/lib/$(DEB_HOST_GNU_TYPE)
-LIB_STD := debian/libedgetpu1-std/usr/lib/$(DEB_HOST_GNU_TYPE)
-LIB_MAX := debian/libedgetpu1-max/usr/lib/$(DEB_HOST_GNU_TYPE)
+LIB_DEV := debian/libedgetpu-legacy-dev/usr/lib/$(DEB_HOST_GNU_TYPE)
+LIB_STD := debian/libedgetpu1-legacy-std/usr/lib/$(DEB_HOST_GNU_TYPE)
+LIB_MAX := debian/libedgetpu1-legacy-max/usr/lib/$(DEB_HOST_GNU_TYPE)
 COMPILER_BIN := debian/edgetpu-compiler/usr/bin
 COMPILER_ARCH := none
 
