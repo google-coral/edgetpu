@@ -1,3 +1,9 @@
+edgetpu (15.0) stable; urgency=medium
+
+  * Update Edge TPU runtime libraries
+
+ -- Coral <coral-support@google.com>  Wed, 04 Nov 2020 15:20:08 -0700
+
 edgetpu (14.1) stable; urgency=medium
 
   * Update Edge TPU binary compiler

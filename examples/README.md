@@ -1,12 +1,10 @@
 # Edge TPU Python API examples
 
-This directory contains several examples that show how to use the [Edge TPU Python
-API](https://coral.ai/docs/edgetpu/api-intro/) to perform inference or on-device transfer learning.
+This directory contains several examples for the [Edge TPU
+Python API](https://github.com/google-coral/edgetpu/tree/master/edgetpu).
 
-**Note:** Using the Edge TPU Python API provides simple APIs that are built atop the TensorFlow Lite
-APIs, abstracting-away the details that handle input and output tensors. If you prefer to run an
-inference using the TensorFlow Lite APIs directly, instead see our [Coral examples using TensorFlow
-Lite API](https://github.com/google-coral/tflite).
+**NOTICE:** The Edge TPU Python library is deprecated. We recommend you
+instead use [PyCoral](https://github.com/google-coral/pycoral).
 
 ## Prerequisites
 
