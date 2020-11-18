@@ -16,9 +16,9 @@ r"""An example using `BasicEngine` to perform semantic segmentation.
 The following command runs this script and saves a new image showing the
 segmented pixels at the location specified by `output`:
 
-python3 examples/semantic_segmentation.py \
+python3 semantic_segmentation.py \
 --model models/deeplabv3_mnv2_pascal_quant_edgetpu.tflite \
---input models/bird.bmp \
+--input images/bird.bmp \
 --keep_aspect_ratio \
 --output ${HOME}/segmentation_result.jpg
 """
