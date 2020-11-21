@@ -14,6 +14,20 @@
 #include "tensorflow/lite/interpreter.h"
 #include "tensorflow/lite/model.h"
 
+
+
+namespace coral {
+    
+    std::string GetTempPrefix() {
+        const char* env_temp = getenv("TEMP");
+        if (env_temp) {
+            return env_temp;
+        } else {
+            return "/tmp";
+        }
+    }
+}
+
 std::vector<uint8_t> decode_bmp(const uint8_t* input, int row_size, int width,
                                 int height, int channels, bool top_down) {
   std::vector<uint8_t> output(height * width * channels);
