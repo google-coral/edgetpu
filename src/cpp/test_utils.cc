@@ -432,7 +432,7 @@ void TestDetection(const std::string& model_path, const std::string& image_path,
 void TestCatMsCocoDetection(const std::string& model_path,
                             float score_threshold, float iou_threshold) {
   TestDetection(model_path, TestDataPath("cat.bmp"),
-                /*expected_box=*/{0.1, 0.1, 0.7, 1.0},
+                /*expected_box=*/{0.1f, 0.1f, 0.7f, 1.0f},
                 /*expected_label=*/16, score_threshold, iou_threshold);
 }
 
