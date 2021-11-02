@@ -1,4 +1,5 @@
 # This is a Makefile to cross-compile minimal.cc example.
+# To compile in Dev Board with Mendel you must install libbenchmark-dev package
 # 1. Download TensorFlow to Linux machine:
 #    $ git clone https://github.com/tensorflow/tensorflow.git
 # 2. Download external dependencies for TensorFlow Lite:
@@ -16,15 +17,27 @@
 MAKEFILE_DIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 TENSORFLOW_DIR ?=
 
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+	TARGET := linux
+else
+	TARGET := unknown
+endif
+
+TARGET_ARCH := $(shell uname -m)
+TARGET_OUT_DIR ?= $(TARGET)_$(TARGET_ARCH)
+
 minimal: minimal.cc model_utils.cc
 	aarch64-linux-gnu-g++ -std=c++11 -o minimal minimal.cc model_utils.cc \
 	-I$(MAKEFILE_DIR)/../../../ \
 	-I$(MAKEFILE_DIR)/../../../libedgetpu/ \
 	-I$(TENSORFLOW_DIR) \
+	-I$(TENSORFLOW_DIR)/tensorflow/lite/tools  \
 	-I$(TENSORFLOW_DIR)/tensorflow/lite/tools/make/downloads/flatbuffers/include \
-	-L$(TENSORFLOW_DIR)/tensorflow/lite/tools/make/gen/generic-aarch64_armv8-a/lib \
-	-L$(MAKEFILE_DIR)/../../../libedgetpu/direct/aarch64/ \
-	-ltensorflow-lite -l:libedgetpu.so.1.0 -lpthread -lm -ldl
+	-I$(TENSORFLOW_DIR)/tensorflow/lite/tools/make/downloads/absl \
+	-L$(TENSORFLOW_DIR)/tensorflow/lite/tools/make/gen/$(TARGET_OUT_DIR)/lib \
+	-L$(MAKEFILE_DIR)/../../../libedgetpu/direct/$(TARGET_ARCH) \
+	-lbenchmark -ltensorflow-lite -ledgetpu -lpthread -lm -ldl
 
 clean:
 	rm -f minimal
